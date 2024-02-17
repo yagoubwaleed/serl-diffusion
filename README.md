@@ -33,10 +33,10 @@ The structure of the repo is as follows:
 │   │           └── franka_peg_insert.py # peg insertion environment
 │   ├── robot_servers
 │       └── franka_server.py # this is the server you run to connect to the robot
-└── train_script.py # Script containing the training code. It is environment agnostic
+└── train_script.py # Script containing the training code. It is environment-agnostic
 ```
 ## Example Usage:
-1. Run the robot server potentially modifying the default flags. (make sure the franka has FCI activated)
+1. In a separate terminal,run the robot server, potentially modifying the default flags. (make sure the franka has FCI activated)
     ```bash
     python serl_robot_infra/robot_servers/franka_server.py
     ```
