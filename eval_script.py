@@ -91,7 +91,7 @@ def main(cfg: TrainScriptConfig):
     from franka_env.envs.wrappers import (
         GripperCloseEnv,
         Quat2EulerWrapper,
-        SERLObsWrapper
+        SERLObsWrapperng
     )
 
     env = gym.make(
@@ -104,6 +104,12 @@ def main(cfg: TrainScriptConfig):
     env = SERLObsWrapper(env)
 
     def process_obs(obs):
+        # This function processes the observation such that they can just be fed into the model.
+        # It should return a dictionary with the following keys
+        # 'embed': The image embeddings
+        # 'state': The state of the environment
+        # You can change how you get this information depending on the environment.
+    
         state = obs['state']
         with torch.no_grad():
             im1 = torch.tensor(obs['wrist_1'], dtype=torch.float32).permute(2, 0, 1).to(device)
