@@ -16,6 +16,7 @@ from franka_env.envs.wrappers import (
 
 
 if __name__ == "__main__":
+    
     env = gym.make("FrankaPegInsert-Vision-v0")
     env = GripperCloseEnv(env)
     env = SpacemouseIntervention(env)
@@ -27,6 +28,7 @@ if __name__ == "__main__":
 
     transitions = []
     success_count = 0
+    # Change this to the number of demos you want to record
     success_needed = 100
     pbar = tqdm(total=success_needed)
 

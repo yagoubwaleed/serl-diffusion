@@ -35,9 +35,27 @@ The structure of the repo is as follows:
 │       └── franka_server.py # this is the server you run to connect to the robot
 └── train_script.py # Script containing the training code. It is environment agnostic
 ```
+## Example Usage:
+1. Run the robot server potentially modifying the default flags. (make sure the franka has FCI activated)
+    ```bash
+    python serl_robot_infra/robot_servers/franka_server.py
+    ```
+2. Record demonstrations with the space mouse. Change the variable success_needed to modify the number of demonstrations you will collect
+    ```bash
+    python record_demos.py
+    ```
+3. Train the policy. You will have to modify the hydra configuration dataclass at the top of the script to have the right paths
+    ```bash
+    python train_script.py
+    ```
+4. Evaluate the policy. You will have to modify the hydra configuration dataclass at the top of the script to have the right paths
+    ```bash
+    python eval_script.py
+    ```
 
 ## Todos:
 - Maybe add octo?
 - Make the eval script read the paramaters from the checkpoint
 - Add vr teleop to the codebase
 - Add the ability to randomly pick trajectories
+- Add the ability to pause when demoing
