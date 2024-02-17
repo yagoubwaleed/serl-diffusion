@@ -1,8 +1,0 @@
-num_trajs: 100
-batch_size: 64
-num_epochs: 20
-checkpoint_path: '${hydra:runtime.cwd}/${checkpoint_name: ${num_trajs}}'
-dataset_path: ${hydra:runtime.cwd}/peg_insert_100_demos_2024-02-11_13-35-54.pkl
-with_state: true
-state_len: 0
-action_dim: 6
