@@ -91,7 +91,7 @@ def main(cfg: TrainScriptConfig):
     from franka_env.envs.wrappers import (
         GripperCloseEnv,
         Quat2EulerWrapper,
-        SERLObsWrapperng
+        SERLObsWrapper
     )
 
     env = gym.make(
