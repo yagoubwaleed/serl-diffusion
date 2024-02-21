@@ -34,11 +34,11 @@ class ImageTrainingScriptConfig:
     action_dim: int = 6
     
     # parameters
-    pred_horizon = 16
-    obs_horizon = 2
-    action_horizon = 8
-    num_diffusion_iters = 100
-    num_cameras = 2
+    pred_horizon: int = 16
+    obs_horizon: int = 2
+    action_horizon: int = 8
+    num_diffusion_iters: int = 100
+    num_cameras: int = 2
 
 cs = hydra.core.config_store.ConfigStore.instance()
 cs.store(name="image_train_script", node=ImageTrainingScriptConfig)
