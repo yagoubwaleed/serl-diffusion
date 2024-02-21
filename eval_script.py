@@ -1,24 +1,22 @@
-from typing import List
+import collections
+from dataclasses import dataclass
+
+import gymnasium as gym
+import hydra
 import numpy as np
 import torch
-import torch.nn as nn
-import collections
-from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
 from tqdm.auto import tqdm
 
-from diffusion_policy.dataset import SERLImageDataset, normalize_data, unnormalize_data
-from diffusion_policy.networks import ConditionalUnet1D, get_resnet, replace_bn_with_gn
-
-import hydra
-from dataclasses import dataclass
 from diffusion_policy.configs import ExperimentHydraConfig, ImageTrainingScriptConfig
 from diffusion_policy.configs import instantiate_model
-import gymnasium as gym
+from diffusion_policy.dataset import normalize_data, unnormalize_data
 from franka_env.envs.wrappers import (
     GripperCloseEnv,
     Quat2EulerWrapper,
     SERLObsWrapper
 )
+
+
 ### ======================= Hydra Configuration  =============================
 # TODO: All of the paramaters of the model are saved in the checkpoint, so we don't need to specify them here
 
