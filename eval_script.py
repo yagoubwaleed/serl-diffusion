@@ -38,7 +38,7 @@ def main(cfg: TrainScriptConfig):
     checkpoint = torch.load(cfg.checkpoint_path, map_location='cuda')
     config: ImageTrainingScriptConfig = checkpoint['config']
     nets, noise_scheduler, device = instantiate_model(config, model_only=True)
-    nets.load_state_dict(checkpoint['ema_nets'])
+    nets.load_state_dict(checkpoint['state_dict'])
     print('Pretrained weights loaded.')
     stats = checkpoint['stats']
 
