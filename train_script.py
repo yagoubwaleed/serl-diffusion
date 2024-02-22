@@ -6,15 +6,19 @@ import torch
 import torch.nn as nn
 from tqdm.auto import tqdm
 
-from diffusion_policy.configs import ImageTrainingScriptConfig, instantiate_model
+from diffusion_policy.configs import SerlModelConfig
+from diffusion_policy.make_networks import instantiate_model
+
+cs = hydra.core.config_store.ConfigStore.instance()
+cs.store(name="serl_model_config", node=SerlModelConfig)
 
 
-@hydra.main(version_base=None, config_name="image_train_script")
-def main(cfg: ImageTrainingScriptConfig):
-
-    nets, ema, noise_scheduler, optimizer, lr_scheduler, dataloader, stats, device = instantiate_model(cfg, model_only=False)
+@hydra.main(version_base=None, config_name="serl_model_config")
+def main(cfg: SerlModelConfig):
+    nets, ema, noise_scheduler, optimizer, lr_scheduler, dataloader, stats, device = instantiate_model(cfg,
+                                                                                                       model_only=False)
     vision_feature_dim = 512 * cfg.num_cameras
-    with tqdm(range(cfg.num_epochs), desc='Epoch',) as tglobal:
+    with tqdm(range(cfg.num_epochs), desc='Epoch', ) as tglobal:
         # epoch loop
         for epoch_idx in tglobal:
             epoch_loss = list()
@@ -26,7 +30,6 @@ def main(cfg: ImageTrainingScriptConfig):
                     nimage = nbatch['image'][:, :cfg.obs_horizon].to(device)
                     naction = nbatch['action'].to(device)
                     B = nimage.shape[0]
-
 
                     image_features = nets['vision_encoder'](
                         nimage.flatten(end_dim=2))

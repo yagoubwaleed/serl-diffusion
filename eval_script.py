@@ -7,8 +7,8 @@ import numpy as np
 import torch
 from tqdm.auto import tqdm
 
-from diffusion_policy.configs import ExperimentHydraConfig, ImageTrainingScriptConfig
-from diffusion_policy.configs import instantiate_model
+from diffusion_policy.configs import ExperimentHydraConfig, SerlModelConfig
+from diffusion_policy.make_networks import instantiate_model
 from diffusion_policy.dataset import normalize_data, unnormalize_data
 from franka_env.envs.wrappers import (
     GripperCloseEnv,
@@ -17,8 +17,8 @@ from franka_env.envs.wrappers import (
 )
 
 
-### ======================= Hydra Configuration  =============================
-# TODO: All of the paramaters of the model are saved in the checkpoint, so we don't need to specify them here
+cs = hydra.core.config_store.ConfigStore.instance()
+cs.store(name="serl_model_config", node=SerlModelConfig)
 
 @dataclass
 class TrainScriptConfig:
@@ -34,7 +34,7 @@ cs.store(name="train_script_config", node=TrainScriptConfig)
 @hydra.main(version_base=None, config_name="train_script_config")
 def main(cfg: TrainScriptConfig):
     checkpoint = torch.load(cfg.checkpoint_path, map_location='cuda')
-    config: ImageTrainingScriptConfig = checkpoint['config']
+    config: SerlModelConfig = checkpoint['config']
     nets, noise_scheduler, device = instantiate_model(config, model_only=True)
     nets.load_state_dict(checkpoint['state_dict'])
     print('Pretrained weights loaded.')
