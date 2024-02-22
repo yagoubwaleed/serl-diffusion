@@ -8,7 +8,7 @@ import torch
 from tqdm.auto import tqdm
 
 from diffusion_policy.configs import ExperimentHydraConfig, SerlModelConfig
-from diffusion_policy.make_networks import instantiate_model
+from diffusion_policy.make_networks import instantiate_model_artifacts
 from diffusion_policy.dataset import normalize_data, unnormalize_data
 from franka_env.envs.wrappers import (
     GripperCloseEnv,
@@ -159,7 +159,7 @@ def run_one_eval(env: gym.Env, nets: torch.nn.Module, config: SerlModelConfig, s
 def main(cfg: EvalConfig):
     checkpoint = torch.load(cfg.checkpoint_path, map_location='cuda')
     config: SerlModelConfig = checkpoint['config']
-    nets, noise_scheduler, device = instantiate_model(config, model_only=True)
+    nets, noise_scheduler, device = instantiate_model_artifacts(config, model_only=True)
     nets.load_state_dict(checkpoint['state_dict'])
     print('Pretrained weights loaded.')
     stats = checkpoint['stats']
