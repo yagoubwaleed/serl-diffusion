@@ -43,7 +43,7 @@ class ExperimentHydraConfig(HydraConf):
 
 
 @dataclass
-class SerlModelConfig:
+class DiffusionModelRunConfig:
     hydra: ExperimentHydraConfig = ExperimentHydraConfig()
     device: str = "cuda"
     num_trajs: int = 10

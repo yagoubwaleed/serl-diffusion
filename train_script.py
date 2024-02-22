@@ -6,15 +6,15 @@ import torch
 import torch.nn as nn
 from tqdm.auto import tqdm
 
-from diffusion_policy.configs import SerlModelConfig
+from diffusion_policy.configs import DiffusionModelRunConfig
 from diffusion_policy.make_networks import instantiate_model_artifacts
 
 cs = hydra.core.config_store.ConfigStore.instance()
-cs.store(name="serl_model_config", node=SerlModelConfig)
+cs.store(name="diffusion_model_run_cfg", node=DiffusionModelRunConfig)
 
 
-@hydra.main(version_base=None, config_name="serl_model_config")
-def main(cfg: SerlModelConfig):
+@hydra.main(version_base=None, config_name="diffusion_model_run_cfg")
+def main(cfg: DiffusionModelRunConfig):
     nets, ema, noise_scheduler, optimizer, lr_scheduler, dataloader, stats, device = instantiate_model_artifacts(cfg,
                                                                                                                  model_only=False)
     vision_feature_dim = 512 * cfg.num_cameras

@@ -7,7 +7,7 @@ import numpy as np
 import torch
 from tqdm.auto import tqdm
 
-from diffusion_policy.configs import ExperimentHydraConfig, SerlModelConfig
+from diffusion_policy.configs import ExperimentHydraConfig, DiffusionModelRunConfig
 from diffusion_policy.make_networks import instantiate_model_artifacts
 from diffusion_policy.dataset import normalize_data, unnormalize_data
 from franka_env.envs.wrappers import (
@@ -16,8 +16,7 @@ from franka_env.envs.wrappers import (
     SERLObsWrapper
 )
 
-cs = hydra.core.config_store.ConfigStore.instance()
-cs.store(name="serl_model_config", node=SerlModelConfig)
+
 
 
 @dataclass
@@ -26,7 +25,6 @@ class EvalConfig:
     checkpoint_path: str = "${hydra:runtime.cwd}/${checkpoint_name: ${num_trajs}}"
     max_steps: int = 100
     num_eval_episodes: int = 10
-
 
 cs = hydra.core.config_store.ConfigStore.instance()
 cs.store(name="eval_config", node=EvalConfig)
@@ -51,7 +49,7 @@ def process_obs(obs, nets, device):
     }
 
 
-def run_one_eval(env: gym.Env, nets: torch.nn.Module, config: SerlModelConfig, stats, noise_scheduler, device,
+def run_one_eval(env: gym.Env, nets: torch.nn.Module, config: DiffusionModelRunConfig, stats, noise_scheduler, device,
                  max_steps: int) -> bool:
     # get first observation
     obs, _ = env.reset()
@@ -158,8 +156,9 @@ def run_one_eval(env: gym.Env, nets: torch.nn.Module, config: SerlModelConfig, s
 @hydra.main(version_base=None, config_name="eval_config")
 def main(cfg: EvalConfig):
     checkpoint = torch.load(cfg.checkpoint_path, map_location='cuda')
-    config: SerlModelConfig = checkpoint['config']
-    nets, noise_scheduler, device = instantiate_model_artifacts(config, model_only=True)
+    diff_run_config: DiffusionModelRunConfig = checkpoint['config']
+
+    nets, noise_scheduler, device = instantiate_model_artifacts(diff_run_config, model_only=True)
     nets.load_state_dict(checkpoint['state_dict'])
     print('Pretrained weights loaded.')
     stats = checkpoint['stats']
@@ -174,9 +173,9 @@ def main(cfg: EvalConfig):
     env = SERLObsWrapper(env)
     successes = 0
     for _ in tqdm(range(cfg.num_eval_episodes), desc='Evaluating'):
-        succedded = run_one_eval(env=env, nets=nets, config=config, stats=stats, noise_scheduler=noise_scheduler,
+        succeeded = run_one_eval(env=env, nets=nets, config=diff_run_config, stats=stats, noise_scheduler=noise_scheduler,
                      device=device, max_steps=cfg.max_steps)
-        if succedded:
+        if succeeded:
             successes += 1
     # Round to the 3rd decimal place
     success_rate = round(successes / cfg.num_eval_episodes, 3)
