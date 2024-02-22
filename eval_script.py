@@ -21,18 +21,18 @@ cs = hydra.core.config_store.ConfigStore.instance()
 cs.store(name="serl_model_config", node=SerlModelConfig)
 
 @dataclass
-class TrainScriptConfig:
+class EvalConfig:
     hydra: ExperimentHydraConfig = ExperimentHydraConfig()
     checkpoint_path: str = "${hydra:runtime.cwd}/${checkpoint_name: ${num_trajs}}"
     max_steps: int = 100
 
 
 cs = hydra.core.config_store.ConfigStore.instance()
-cs.store(name="train_script_config", node=TrainScriptConfig)
+cs.store(name="eval_config", node=EvalConfig)
 
 
-@hydra.main(version_base=None, config_name="train_script_config")
-def main(cfg: TrainScriptConfig):
+@hydra.main(version_base=None, config_name="eval_config")
+def main(cfg: EvalConfig):
     checkpoint = torch.load(cfg.checkpoint_path, map_location='cuda')
     config: SerlModelConfig = checkpoint['config']
     nets, noise_scheduler, device = instantiate_model(config, model_only=True)
