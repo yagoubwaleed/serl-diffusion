@@ -5,7 +5,7 @@ from diffusers import DDPMScheduler, EMAModel, get_scheduler
 from diffusion_policy.dataset import SERLImageDataset
 from diffusion_policy.networks import get_resnet, replace_bn_with_gn
 from diffusion_policy.configs import DiffusionModelRunConfig
-def instantiate_model_artifacts(cfig: DiffusionModelRunConfig, model_only: bool = False):
+def instantiate_model_artifacts(cfg: DiffusionModelRunConfig, model_only: bool = False):
     '''
     Instantiate the model and the training objects.
     If model only, returns network and scheduler and device only
