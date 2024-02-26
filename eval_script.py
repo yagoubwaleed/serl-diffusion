@@ -22,9 +22,9 @@ from franka_env.envs.wrappers import (
 @dataclass
 class EvalConfig:
     hydra: ExperimentHydraConfig = ExperimentHydraConfig()
-    checkpoint_path: str = "${hydra:runtime.cwd}/${checkpoint_name: ${num_trajs}}"
+    checkpoint_path: str = "${hydra:runtime.cwd}/outputs/checkpoint_w_60_trajectories.pt"
     max_steps: int = 100
-    num_eval_episodes: int = 10
+    num_eval_episodes: int = 20
 
 cs = hydra.core.config_store.ConfigStore.instance()
 cs.store(name="eval_config", node=EvalConfig)
@@ -99,7 +99,7 @@ def run_one_eval(env: gym.Env, nets: torch.nn.Module, config: DiffusionModelRunC
 
             # initialize action from Gaussian noise
             noisy_action = torch.randn(
-                (B, config.pred_horizon, config.action_horizon), device=device)
+                (B, config.pred_horizon, config.action_dim), device=device)
             naction = noisy_action
 
             # init scheduler
