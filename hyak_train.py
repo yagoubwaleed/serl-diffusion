@@ -48,7 +48,7 @@ def main():
     executor.update_parameters(slurm_array_parallelism=6)
     with executor.batch():
         # In here submit jobs, and add them to the list, but they are all considered to be batched.
-        for num_trajectories, num_epochs in SWEAPS:
+for num_trajectories, num_epochs in SWEEPS:
             config = create_config(num_trajectories, num_epochs, "outputs")
             job = executor.submit(run_training, config)
             jobs.append(job)
