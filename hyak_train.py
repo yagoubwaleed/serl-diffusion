@@ -19,7 +19,7 @@ def create_config(num_trajectories: int, num_epochs: int, save_folder):
     return config
 
 
-SWEAPS = [(10, 900),
+SWEEPS = [(10, 900),
           (20, 700),
           (30, 600),
           (40, 600),
