@@ -15,6 +15,10 @@ cs.store(name="diffusion_model_run_cfg", node=DiffusionModelRunConfig)
 
 @hydra.main(version_base=None, config_name="diffusion_model_run_cfg")
 def main(cfg: DiffusionModelRunConfig):
+    run_training(cfg)
+
+
+def run_training(cfg: DiffusionModelRunConfig):
     nets, ema, noise_scheduler, optimizer, lr_scheduler, dataloader, stats, device = instantiate_model_artifacts(cfg,
                                                                                                                  model_only=False)
     vision_feature_dim = 512 * cfg.num_cameras

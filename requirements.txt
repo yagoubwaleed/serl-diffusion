@@ -4,3 +4,4 @@ hydra-core
 diffusers
 torchaudio
 tqdm
+submitit
