@@ -49,7 +49,14 @@ def main():
     with executor.batch():
         # In here submit jobs, and add them to the list, but they are all considered to be batched.
 for num_trajectories, num_epochs in SWEEPS:
-            config = create_config(num_trajectories, num_epochs, "outputs")
+config = DiffusionModelRunConfig(
+                hydra = None,
+                with_state = False,
+                num_trajs = num_trajectories,
+                checkpoint_path = f"{current_dir}/{save_folder}/checkpoint_w_{num_trajectories}_trajectories.pt",
+                dataset_path = f"{current_dir}/peg_insert_100_demos_2024-02-11_13-35-54.pkl",
+                num_epochs = num_epochs,
+            )
             job = executor.submit(run_training, config)
             jobs.append(job)
 
