@@ -5,20 +5,6 @@ import os
 from train_script import run_training
 
 
-def create_config(num_trajectories: int, num_epochs: int, save_folder):
-    config = DiffusionModelRunConfig()
-    config.hydra = None
-    current_dir = os.getcwd()
-    config.with_state = False
-    config.num_trajs = num_trajectories
-    config.checkpoint_path = f"{current_dir}/{save_folder}/checkpoint_w_{num_trajectories}_trajectories.pt"
-    config.dataset_path = f"{current_dir}/peg_insert_100_demos_2024-02-11_13-35-54.pkl"
-    config.num_epochs = num_epochs
-    if not os.path.exists(f"{current_dir}/{save_folder}"):
-        os.makedirs(f"{current_dir}/{save_folder}")
-    return config
-
-
 SWEEPS = [(10, 900),
           (20, 700),
           (30, 600),
@@ -29,7 +15,7 @@ SWEEPS = [(10, 900),
           (80, 300),
           (90, 200),
           (100, 200)]
-
+save_folder = "outputs"
 
 def main():
     print("creating executor")
@@ -46,10 +32,12 @@ def main():
                                slurm_ntasks_per_node=1,
                                )
     executor.update_parameters(slurm_array_parallelism=6)
+    current_dir = os.getcwd()
+
     with executor.batch():
         # In here submit jobs, and add them to the list, but they are all considered to be batched.
-for num_trajectories, num_epochs in SWEEPS:
-config = DiffusionModelRunConfig(
+        for num_trajectories, num_epochs in SWEEPS:
+            config = DiffusionModelRunConfig(
                 hydra = None,
                 with_state = False,
                 num_trajs = num_trajectories,
