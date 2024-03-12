@@ -52,7 +52,7 @@ class DiffusionModelRunConfig:
     hydra: ExperimentHydraConfig = ExperimentHydraConfig()
     dataset: DatasetConfig = DatasetConfig()
     device: str = "cuda"
-    checkpoint_path: str = "${hydra:runtime.cwd}/${checkpoint_name: ${num_trajs}}"
+    checkpoint_path: str = "${hydra:runtime.cwd}/${checkpoint_name: ${dataset:num_trajs}}"
 
     batch_size: int = 256
     num_epochs: int = 8
