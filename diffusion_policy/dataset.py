@@ -1,8 +1,9 @@
+import h5py
 import numpy as np
 import torch
 import os
 import pickle
-
+import cv2
 
 def create_sample_indices(
         episode_ends: np.ndarray, sequence_length: int,
@@ -75,6 +76,111 @@ def unnormalize_data(ndata, stats):
     ndata = (ndata + 1) / 2
     data = ndata * (stats['max'] - stats['min']) + stats['min']
     return data
+
+
+class HD5PYDataset(torch.utils.data.Dataset):
+    def __init__(self,
+                 dataset_path: str,
+                 pred_horizon: int,
+                 obs_horizon: int,
+                 action_horizon: int,
+                 num_trajectories: int = 200,
+                 image_keys: list = ['agentview_image'],
+                 state_keys: list = ['robot0_eef_pos', 'robot0_gripper_qpos', 'robot0_eef_quat'],
+                 ):
+
+        # load the demonstration dataset:
+        data = h5py.File(dataset_path, 'r')['data']
+
+
+        actions = []
+        images = []
+        states = []
+        episode_ends = []
+
+        for traj_key in data.keys():
+            if num_trajectories > 0:
+                num_trajectories -= 1
+                if num_trajectories == 0:
+                    break
+            trajectory = data[traj_key]
+            state = [np.array(trajectory[f'obs/{state_key}']) for state_key in state_keys]
+            state = np.concatenate(state, axis=-1)
+            states.append(state)
+            imgs = [np.array(trajectory[f'obs/{key}']) for key in image_keys]
+            for i in range(len(imgs)):
+                # resize image to (T, 96, 96, C)
+                imgs[i] = np.array([cv2.resize(img, (96, 96)) for img in imgs[i]])
+
+                # (T, H, W, C) -> (T, C, H, W)
+                imgs[i] = np.moveaxis(imgs[i], 3, 1)
+            imgs = np.stack(imgs, axis=1)
+            images.append(imgs)
+            actions.append(np.array(trajectory['actions']))
+            if len(episode_ends) == 0:
+                episode_ends.append(len(state))
+            else:
+                episode_ends.append(episode_ends[-1] + len(state))
+        del data
+        actions = np.concatenate(actions).astype(np.float32)
+        states = np.concatenate(states).astype(np.float32)
+        episode_ends = np.array(episode_ends)
+        images = np.concatenate(images).astype(np.float32)
+
+        # (N, D)
+        train_data = {
+            # first two dims of state vector are agent (i.e. gripper) locations
+            'state': states,
+            'action': actions,
+        }
+
+        # compute start and end of each state-action sequence
+        # also handles padding
+        indices = create_sample_indices(
+            episode_ends=episode_ends,
+            sequence_length=pred_horizon,
+            pad_before=obs_horizon - 1,
+            pad_after=action_horizon - 1)
+
+        # compute statistics and normalized data to [-1,1]
+        stats = dict()
+        normalized_train_data = dict()
+        for key, data in train_data.items():
+            stats[key] = get_data_stats(data)
+            normalized_train_data[key] = normalize_data(data, stats[key])
+
+        # images are already normalized
+        normalized_train_data['image'] = images
+
+        self.indices = indices
+        self.stats = stats
+        self.normalized_train_data = normalized_train_data
+        self.pred_horizon = pred_horizon
+        self.action_horizon = action_horizon
+        self.obs_horizon = obs_horizon
+
+    def __len__(self):
+        return len(self.indices)
+
+    def __getitem__(self, idx):
+        # get the start/end indices for this datapoint
+        buffer_start_idx, buffer_end_idx, \
+            sample_start_idx, sample_end_idx = self.indices[idx]
+
+        # get nomralized data using these indices
+        nsample = sample_sequence(
+            train_data=self.normalized_train_data,
+            sequence_length=self.pred_horizon,
+            buffer_start_idx=buffer_start_idx,
+            buffer_end_idx=buffer_end_idx,
+            sample_start_idx=sample_start_idx,
+            sample_end_idx=sample_end_idx
+        )
+
+        # discard unused observations
+        nsample['image'] = nsample['image'][:self.obs_horizon, :]
+        nsample['state'] = nsample['state'][:self.obs_horizon, :]
+        return nsample
 
 
 class SERLImageDataset(torch.utils.data.Dataset):
@@ -195,22 +301,16 @@ class SERLImageDataset(torch.utils.data.Dataset):
 
 
 if __name__ == "__main__":
-    dataset_path = '/home/siri/Desktop/insertion_replication/serl/peg_insert_100_demos_2024-02-11_13-35-54.pkl'
-    dataset1 = SERLImageDataset(
-        dataset_path=dataset_path,
-        pred_horizon=16,
-        obs_horizon=2,
-        action_horizon=8,
-        num_trajectories=100,
-    )
-    dataset2 = SERLImageDataset(
-        dataset_path=dataset_path,
-        pred_horizon=26,
-        obs_horizon=2,
-        action_horizon=8,
-        num_trajectories=2,
-    )
-    x = dataset1[0] 
-    y = dataset2[0] 
+    dataset_path = '../data/image.hdf5'
     print('here')
-
+    try:
+        dataset1 = HD5PYDataset(
+            dataset_path=dataset_path,
+            pred_horizon=16,
+            obs_horizon=2,
+            action_horizon=8,
+        )
+    except Exception as e:
+        print(e)
+    print('here')
+    print(len(dataset1))

@@ -41,24 +41,29 @@ class ExperimentHydraConfig(HydraConf):
         "chdir": True
     })
 
+@dataclass
+class DatasetConfig:
+    type: str = "SERL"  # Options are SERL or HDF5
+    dataset_path: str = "${hydra:runtime.cwd}/data/image.hdf5"
+    num_traj: int = -1
 
 @dataclass
 class DiffusionModelRunConfig:
     hydra: ExperimentHydraConfig = ExperimentHydraConfig()
+    dataset: DatasetConfig = DatasetConfig()
     device: str = "cuda"
-    num_trajs: int = 10
-    batch_size: int = 64
-    num_epochs: int = 6
     checkpoint_path: str = "${hydra:runtime.cwd}/${checkpoint_name: ${num_trajs}}"
-    dataset_path: str = "${hydra:runtime.cwd}/peg_insert_100_demos_2024-02-11_13-35-54.pkl"
+
+    batch_size: int = 256
+    num_epochs: int = 8
     with_state: bool = True
-    state_len: int = 19
-    action_dim: int = 6
-    pred_horizon: int = 16
+    state_len: int = 9
+    action_dim: int = 7
+    pred_horizon: int = 8
     obs_horizon: int = 2
     action_horizon: int = 8
     num_diffusion_iters: int = 100
-    num_cameras: int = 2
+    num_cameras: int = 1
 
 
 

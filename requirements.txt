@@ -5,3 +5,5 @@ diffusers
 torchaudio
 tqdm
 submitit
+h5py
+robosuite
