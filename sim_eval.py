@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import numpy as np
 import torch
 from tqdm import tqdm
-
+import cv2
 from diffusion_policy.configs import DiffusionModelRunConfig
 from diffusion_policy.dataset import normalize_data, unnormalize_data
 from diffusion_policy.make_networks import instantiate_model_artifacts
@@ -17,14 +17,15 @@ from diffusion_policy.make_networks import instantiate_model_artifacts
 class EvalConfig:
     num_trajs: int = 100
     render: bool = False
-    max_steps: int = 300
-    model_checkpoint: str = "outputs/nonweighted_robomimic.pt"
-    num_eval_episodes: int = 20
+    max_steps: int = 400
+    model_checkpoint: str = "image_lift_propreo.pt"
+    sim_json_path: str = "data/two_camera_lift_metadata.json"
+    num_eval_episodes: int = 10
 
 
 
 def main(cfg: EvalConfig):
-    metadata = json.load(open("data/sim_metadata.json", "r"))
+    metadata = json.load(open(cfg.sim_json_path, "r"))
     kwargs = metadata["env_kwargs"]
     if cfg.render:
         kwargs["has_renderer"] = True
@@ -50,18 +51,28 @@ def main(cfg: EvalConfig):
     success_rate = round(successes / cfg.num_eval_episodes, 3)
     print(f'Success rate: {success_rate}')
 
-def process_obs(obs, nets, device):
+def process_obs(obs, nets, device, image_keys):
     # This function processes the observation such that they can just be fed into the model.
     # It should return a dictionary with the following keys
     # 'embed': The image embeddings
     # 'state': The state of the environment
     # You can change how you get this information depending on the environment.
-    state_keys = ['robot0_eef_pos', 'robot0_gripper_qpos', 'robot0_eef_quat']
+    # print(obs.keys())
+    state_keys = ['robot0_proprio-state']
+
     state = [obs[state_key] for state_key in state_keys]
+    # state.insert(3, np.sinh(obs['robot0_joint_pos_sin']))
     state = np.concatenate(state, axis=-1)
+    imgs = [np.array(obs[key]) for key in image_keys]
+
     with torch.no_grad():
-        im1 = torch.tensor(obs['agentview_image'], dtype=torch.float32).permute(2, 0, 1).to(device)
-        images = nets['vision_encoder'](im1.unsqueeze(0)).cpu().flatten().numpy()
+        images = []
+        for key in image_keys:
+            img = torch.tensor(obs[key], dtype=torch.float32).permute(2, 0, 1).to(device)
+            images.append(img)
+        
+        imgs = torch.stack(images).to(device)
+        images = nets['vision_encoder'](imgs).cpu().flatten().numpy()
     return {
         'embed': images,
         'state': state
@@ -72,7 +83,7 @@ def run_one_eval(env, nets: torch.nn.Module, config: DiffusionModelRunConfig, st
                  max_steps: int, render=True) -> bool:
     # get first observation
     obs = env.reset()
-    obs = process_obs(obs, nets, device)
+    obs = process_obs(obs, nets, device, config.dataset.image_keys)
 
     # keep a queue of last 2 steps of observations
     obs_deque = collections.deque(
@@ -158,7 +169,7 @@ def run_one_eval(env, nets: torch.nn.Module, config: DiffusionModelRunConfig, st
             obs, reward, done, _ = env.step(action[i])
             if render:
                 env.render()
-            obs = process_obs(obs, nets, device)
+            obs = process_obs(obs, nets, device, config.dataset.image_keys)
             obs_deque.append(obs)
             # and reward/vis
             rewards.append(reward)

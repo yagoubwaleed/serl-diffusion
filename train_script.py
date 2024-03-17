@@ -5,7 +5,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from tqdm.auto import tqdm
-
+import matplotlib.pyplot as plt
 from diffusion_policy.configs import DiffusionModelRunConfig
 from diffusion_policy.make_networks import instantiate_model_artifacts
 
@@ -21,6 +21,7 @@ def main(cfg: DiffusionModelRunConfig):
 def run_training(cfg: DiffusionModelRunConfig):
     nets, ema, noise_scheduler, optimizer, lr_scheduler, dataloader, stats, device = instantiate_model_artifacts(cfg,
                                                                                                                  model_only=False)
+    losses = []
     vision_feature_dim = 512 * cfg.num_cameras
     with tqdm(range(cfg.num_epochs), desc='Epoch', ) as tglobal:
         # epoch loop
@@ -87,6 +88,9 @@ def run_training(cfg: DiffusionModelRunConfig):
                     epoch_loss.append(loss_cpu)
                     tepoch.set_postfix(loss=loss_cpu)
             tglobal.set_postfix(loss=np.mean(epoch_loss))
+            losses.append(np.mean(epoch_loss))
+            plt.plot(losses)
+            plt.savefig('losses.png')
 
     ema_nets = nets
     ema.copy_to(ema_nets.parameters())

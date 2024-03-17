@@ -43,27 +43,29 @@ class ExperimentHydraConfig(HydraConf):
 
 @dataclass
 class DatasetConfig:
-    type: str = "SERL"  # Options are SERL or HDF5
-    dataset_path: str = "${hydra:runtime.cwd}/data/image.hdf5"
+    type: str = "HDF5"  # Options are SERL or HDF5
+    dataset_path: str = "${hydra:runtime.cwd}/data/two_camera_views.hdf5"
     num_traj: int = -1
+    image_keys: list = field(default_factory=lambda: ['agentview_image', 'robot0_eye_in_hand_image'])
+    state_keys: list = field(default_factory=lambda:['robot0_proprio-state'])
 
 @dataclass
 class DiffusionModelRunConfig:
     hydra: ExperimentHydraConfig = ExperimentHydraConfig()
     dataset: DatasetConfig = DatasetConfig()
     device: str = "cuda"
-    checkpoint_path: str = "${hydra:runtime.cwd}/${checkpoint_name: ${dataset:num_trajs}}"
+    checkpoint_path: str = "${hydra:runtime.cwd}/image_lift_propreo.pt"
 
-    batch_size: int = 256
+    batch_size: int = 256//2
     num_epochs: int = 8
     with_state: bool = True
-    state_len: int = 9
+    state_len: int = 45
     action_dim: int = 7
-    pred_horizon: int = 8
-    obs_horizon: int = 2
+    pred_horizon: int = 12
+    obs_horizon: int = 4
     action_horizon: int = 8
     num_diffusion_iters: int = 100
-    num_cameras: int = 1
+    num_cameras: int = 2
 
 
 

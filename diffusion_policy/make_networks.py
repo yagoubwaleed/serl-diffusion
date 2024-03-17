@@ -64,7 +64,9 @@ def instantiate_model_artifacts(cfg: DiffusionModelRunConfig, model_only: bool =
             pred_horizon=cfg.pred_horizon,
             obs_horizon=cfg.obs_horizon,
             action_horizon=cfg.action_horizon,
-            num_trajectories=cfg.dataset.num_traj
+            num_trajectories=cfg.dataset.num_traj,
+            state_keys=cfg.dataset.state_keys,
+            image_keys=cfg.dataset.image_keys
         )
     else:
         raise ValueError(f"Dataset type {cfg.dataset.type} not recognized. Options are SERL or HDF5.)")

@@ -86,7 +86,7 @@ class HD5PYDataset(torch.utils.data.Dataset):
                  action_horizon: int,
                  num_trajectories: int = 200,
                  image_keys: list = ['agentview_image'],
-                 state_keys: list = ['robot0_eef_pos', 'robot0_gripper_qpos', 'robot0_eef_quat'],
+                 state_keys: list = ['robot0_eef_pos', 'robot0_gripper_qpos', 'robot0_eef_quat', 'robot0_joint_pos', 'robot0_joint_vel', 'object'],
                  ):
 
         # load the demonstration dataset:
@@ -104,6 +104,7 @@ class HD5PYDataset(torch.utils.data.Dataset):
                 if num_trajectories == 0:
                     break
             trajectory = data[traj_key]
+
             state = [np.array(trajectory[f'obs/{state_key}']) for state_key in state_keys]
             state = np.concatenate(state, axis=-1)
             states.append(state)
@@ -301,7 +302,7 @@ class SERLImageDataset(torch.utils.data.Dataset):
 
 
 if __name__ == "__main__":
-    dataset_path = '../data/image.hdf5'
+    dataset_path = '../data/two_camera_views.hdf5'
     print('here')
     try:
         dataset1 = HD5PYDataset(
