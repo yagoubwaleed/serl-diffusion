@@ -47,14 +47,14 @@ class DatasetConfig:
     dataset_path: str = "${hydra:runtime.cwd}/data/two_camera_views.hdf5"
     num_traj: int = -1
     image_keys: list = field(default_factory=lambda: ['agentview_image', 'robot0_eye_in_hand_image'])
-    state_keys: list = field(default_factory=lambda:['robot0_proprio-state'])
+    state_keys: list = field(default_factory=lambda:['robot0_eef_pos', 'cube_pos', 'gripper_to_cube_pos', 'robot0_gripper_qpos'])
 
 @dataclass
 class DiffusionModelRunConfig:
     hydra: ExperimentHydraConfig = ExperimentHydraConfig()
     dataset: DatasetConfig = DatasetConfig()
     device: str = "cuda"
-    checkpoint_path: str = "${hydra:runtime.cwd}/image_lift_propreo.pt"
+    checkpoint_path: str = "${hydra:runtime.cwd}/image_lift_propreo_fix.pt"
 
     batch_size: int = 256//2
     num_epochs: int = 8

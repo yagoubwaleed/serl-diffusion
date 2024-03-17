@@ -54,8 +54,9 @@ The structure of the repo is as follows:
     ```
 
 ## Todos:
+- Add documentation + clean procedure on how to use robosuite
 - Maybe add octo?
-- Make the eval script read the paramaters from the checkpoint
+~~- Make the eval script read the paramaters from the checkpoint~~
 - Add vr teleop to the codebase
 - Add the ability to randomly pick trajectories
 - Add the ability to pause when demoing
