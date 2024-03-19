@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from diffusion_policy.networks import ConditionalUnet1D
 from diffusers import DDPMScheduler, EMAModel, get_scheduler
-from diffusion_policy.dataset import SERLImageDataset, HD5PYDataset
+from diffusion_policy.dataset import SERLImageDataset, HD5PYDataset, JacobPickleDataset
 from diffusion_policy.networks import get_resnet, replace_bn_with_gn
 from diffusion_policy.configs import DiffusionModelRunConfig
 
@@ -60,6 +60,16 @@ def instantiate_model_artifacts(cfg: DiffusionModelRunConfig, model_only: bool =
         )
     elif cfg.dataset.type == 'HDF5':
         dataset = HD5PYDataset(
+            dataset_path=cfg.dataset.dataset_path,
+            pred_horizon=cfg.pred_horizon,
+            obs_horizon=cfg.obs_horizon,
+            action_horizon=cfg.action_horizon,
+            num_trajectories=cfg.dataset.num_traj,
+            state_keys=cfg.dataset.state_keys,
+            image_keys=cfg.dataset.image_keys
+        )
+    elif cfg.dataset.type == 'Jacob':
+        dataset = JacobPickleDataset(
             dataset_path=cfg.dataset.dataset_path,
             pred_horizon=cfg.pred_horizon,
             obs_horizon=cfg.obs_horizon,

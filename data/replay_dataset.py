@@ -15,8 +15,8 @@ from diffusion_policy.configs import DatasetConfig
 class DataReplayConfig:
     render: bool = False
     data_config: DatasetConfig = DatasetConfig()
-    sim_json_path: str = "two_camera_lift_metadata.json"
-    dataset_path: str = "two_camera_views.hdf5"
+    sim_json_path: str = "./data/two_camera_lift_metadata.json"
+    dataset_path: str = "./data/two_camera_views.hdf5"
 
 
 def main(cfg: DataReplayConfig):
@@ -34,10 +34,9 @@ def main(cfg: DataReplayConfig):
         traj = data[traj_key]
         extract_data_from_trajectory(traj, env, cfg)
         trajectory_data.append(extract_data_from_trajectory(traj, env, cfg))
-    pickle.dump(trajectory_data, open('replay_data.pkl', 'wb'))
+    pickle.dump(trajectory_data, open('./data/replay_data.pkl', 'wb'))
 
 def extract_data_from_trajectory(traj, env, cfg):
-    print('reseting env')
     results = collections.defaultdict(list)
     env.reset()
     env.sim.set_state_from_flattened(traj['states'][0])
