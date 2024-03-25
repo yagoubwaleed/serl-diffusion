@@ -15,8 +15,9 @@ from diffusion_policy.configs import DatasetConfig
 class DataReplayConfig:
     render: bool = False
     data_config: DatasetConfig = DatasetConfig()
-    sim_json_path: str = "./data/two_camera_lift_metadata.json"
-    dataset_path: str = "./data/two_camera_views.hdf5"
+    sim_json_path: str = "./data/square_peg.json"
+    dataset_path: str = "./data/image.hdf5"
+    output_path: str = "./data/peg_data.pkl"
 
 
 def main(cfg: DataReplayConfig):
@@ -34,7 +35,7 @@ def main(cfg: DataReplayConfig):
         traj = data[traj_key]
         extract_data_from_trajectory(traj, env, cfg)
         trajectory_data.append(extract_data_from_trajectory(traj, env, cfg))
-    pickle.dump(trajectory_data, open('./data/replay_data.pkl', 'wb'))
+    pickle.dump(trajectory_data, open(cfg.output_path, 'wb'))
 
 def extract_data_from_trajectory(traj, env, cfg):
     results = collections.defaultdict(list)
@@ -47,6 +48,7 @@ def extract_data_from_trajectory(traj, env, cfg):
         action = traj['actions'][i]
         # Store the data:
         results['action'].append(action)
+        # print(obs.keys())
         for key in chain(cfg.data_config.image_keys, cfg.data_config.state_keys):
             results[key].append(obs[key])
         obs, reward, done, _ = env.step(action)

@@ -8,7 +8,7 @@ import numpy as np
 import torch
 from tqdm import tqdm
 import cv2
-from diffusion_policy.configs import DiffusionModelRunConfig
+from diffusion_policy.configs import DiffusionModelRunConfig, DatasetConfig
 from diffusion_policy.dataset import normalize_data, unnormalize_data
 from diffusion_policy.make_networks import instantiate_model_artifacts
 
@@ -16,9 +16,9 @@ from diffusion_policy.make_networks import instantiate_model_artifacts
 @dataclass
 class EvalConfig:
     num_trajs: int = 100
-    render: bool = False
+    render: bool = True
     max_steps: int = 400
-    model_checkpoint: str = "image_lift_propreo.pt"
+    model_checkpoint: str = "jacob_dataformat_image_only.pkl"
     sim_json_path: str = "data/two_camera_lift_metadata.json"
     num_eval_episodes: int = 10
 
@@ -51,14 +51,14 @@ def main(cfg: EvalConfig):
     success_rate = round(successes / cfg.num_eval_episodes, 3)
     print(f'Success rate: {success_rate}')
 
-def process_obs(obs, nets, device, image_keys):
+def process_obs(obs, nets, device, image_keys, state_keys):
     # This function processes the observation such that they can just be fed into the model.
     # It should return a dictionary with the following keys
     # 'embed': The image embeddings
     # 'state': The state of the environment
     # You can change how you get this information depending on the environment.
     # print(obs.keys())
-    state_keys = ['robot0_proprio-state']
+
 
     state = [obs[state_key] for state_key in state_keys]
     # state.insert(3, np.sinh(obs['robot0_joint_pos_sin']))
@@ -83,7 +83,7 @@ def run_one_eval(env, nets: torch.nn.Module, config: DiffusionModelRunConfig, st
                  max_steps: int, render=True) -> bool:
     # get first observation
     obs = env.reset()
-    obs = process_obs(obs, nets, device, config.dataset.image_keys)
+    obs = process_obs(obs, nets, device, config.dataset.image_keys, config.dataset.state_keys)
 
     # keep a queue of last 2 steps of observations
     obs_deque = collections.deque(
@@ -169,7 +169,7 @@ def run_one_eval(env, nets: torch.nn.Module, config: DiffusionModelRunConfig, st
             obs, reward, done, _ = env.step(action[i])
             if render:
                 env.render()
-            obs = process_obs(obs, nets, device, config.dataset.image_keys)
+            obs = process_obs(obs, nets, device, config.dataset.image_keys, config.dataset.state_keys)
             obs_deque.append(obs)
             # and reward/vis
             rewards.append(reward)

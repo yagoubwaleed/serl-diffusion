@@ -44,9 +44,9 @@ class ExperimentHydraConfig(HydraConf):
 @dataclass
 class DatasetConfig:
     type: str = "Jacob"  # Options are SERL or HDF5 or Jacob
-    dataset_path: str = "${hydra:runtime.cwd}/data/replay_data.pkl"
+    dataset_path: str = "${hydra:runtime.cwd}/data/peg_data.pkl"
     num_traj: int = -1
-    image_keys: list = field(default_factory=lambda: ['agentview_image', 'robot0_eye_in_hand_image'])
+    image_keys: list = field(default_factory=lambda: ['agentview_image', 'robot0_eye_in_hand_image', 'birdview_image'])
     state_keys: list = field(default_factory=lambda:['robot0_proprio-state', 'object-state'])
 
 @dataclass
@@ -57,15 +57,15 @@ class DiffusionModelRunConfig:
     checkpoint_path: str = "${hydra:runtime.cwd}/jacob_dataformat_image_propreo.pt"
 
     batch_size: int = 256//2
-    num_epochs: int = 8
-    with_state: bool = True
+    num_epochs: int = 16
+    with_state: bool = False
     state_len: int = 42
     action_dim: int = 7
     pred_horizon: int = 12
     obs_horizon: int = 4
     action_horizon: int = 8
     num_diffusion_iters: int = 100
-    num_cameras: int = 2
+    num_cameras: int = 3
 
 
 
