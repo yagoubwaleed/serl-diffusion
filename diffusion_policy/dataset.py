@@ -99,6 +99,7 @@ class BaseDataset(torch.utils.data.Dataset):
         self.pred_horizon = None
         self.action_horizon = None
         self.obs_horizon = None
+
     def __len__(self):
         return len(self.indices)
 
@@ -194,15 +195,16 @@ class JacobPickleDataset(BaseDataset):
         self.action_horizon = action_horizon
         self.obs_horizon = obs_horizon
 
+
 class HD5PYDataset(BaseDataset):
-    # noinspection PyDefaultArgument
     def __init__(self, dataset_path: str, pred_horizon: int, obs_horizon: int, action_horizon: int,
-                 num_trajectories: int = 200, image_keys: list = ['agentview_image'],
-                 state_keys: list = ['robot0_eef_pos', 'robot0_gripper_qpos', 'robot0_eef_quat', 'robot0_joint_pos',
-                                     'robot0_joint_vel', 'object']):
+                 num_trajectories: int = 200, image_keys: list = None,
+                 state_keys: list = None):
 
         # load the demonstration dataset:
         super().__init__()
+        assert state_keys is not None and image_keys is not None
+
         data = h5py.File(dataset_path, 'r')['data']
 
         actions = []
@@ -273,7 +275,7 @@ class HD5PYDataset(BaseDataset):
         self.obs_horizon = obs_horizon
 
 
-class SERLImageDataset(torch.utils.data.Dataset):
+class SERLImageDataset(BaseDataset):
     def __init__(self,
                  dataset_path: str,
                  pred_horizon: int,
@@ -365,8 +367,6 @@ class SERLImageDataset(torch.utils.data.Dataset):
         self.pred_horizon = pred_horizon
         self.action_horizon = action_horizon
         self.obs_horizon = obs_horizon
-
-
 
 
 if __name__ == "__main__":

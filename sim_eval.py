@@ -1,26 +1,26 @@
 import collections
 import json
-import time
-from typing import Callable
+import os
+from typing import Callable, Union
 import robosuite as suite
 from dataclasses import dataclass
 import numpy as np
 import torch
 from tqdm import tqdm
-import cv2
 from diffusion_policy.configs import DiffusionModelRunConfig, DatasetConfig
 from diffusion_policy.dataset import normalize_data, unnormalize_data
 from diffusion_policy.make_networks import instantiate_model_artifacts
+from utils.video_recorder import VideoRecorder
 
 
 @dataclass
 class EvalConfig:
-    num_trajs: int = 100
-    render: bool = True
-    max_steps: int = 400
-    model_checkpoint: str = "jacob_dataformat_image_only.pkl"
-    sim_json_path: str = "data/two_camera_lift_metadata.json"
-    num_eval_episodes: int = 10
+    render: bool = False
+    video_save_path: Union[str, None] = "outputs/16_epoch_videos"
+    max_steps: int = 500
+    model_checkpoint: str = "16_epoch_peg.pt"
+    sim_json_path: str = "data/square_peg.json"
+    num_eval_episodes: int = 20
 
 
 
@@ -29,10 +29,15 @@ def main(cfg: EvalConfig):
     kwargs = metadata["env_kwargs"]
     if cfg.render:
         kwargs["has_renderer"] = True
+    if cfg.video_save_path is not None:
+        os.makedirs(cfg.video_save_path, exist_ok=True)
+
     env = suite.make(
         env_name=metadata["env_name"],
         **kwargs
     )
+
+
     checkpoint = torch.load(cfg.model_checkpoint, map_location='cuda')
     diff_run_config: DiffusionModelRunConfig = checkpoint['config']
 
@@ -41,10 +46,11 @@ def main(cfg: EvalConfig):
     print('Pretrained weights loaded.')
     stats = checkpoint['stats']
     successes = 0
-    for _ in tqdm(range(cfg.num_eval_episodes), desc='Evaluating'):
+    for i in tqdm(range(cfg.num_eval_episodes), desc='Evaluating'):
         succeeded = run_one_eval(env=env, nets=nets, config=diff_run_config, stats=stats,
                                  noise_scheduler=noise_scheduler,
-                                 device=device, max_steps=cfg.max_steps, render=cfg.render)
+                                 device=device, max_steps=cfg.max_steps, render=cfg.render,
+                                 save_path=cfg.video_save_path + f"/episode_{i}")
         if succeeded:
             successes += 1
     # Round to the 3rd decimal place
@@ -80,9 +86,12 @@ def process_obs(obs, nets, device, image_keys, state_keys):
 
 
 def run_one_eval(env, nets: torch.nn.Module, config: DiffusionModelRunConfig, stats, noise_scheduler, device,
-                 max_steps: int, render=True) -> bool:
+                 max_steps: int, render=True, save_path: Union[str, None]= None) -> bool:
     # get first observation
     obs = env.reset()
+    if save_path is not None:
+        recorder = VideoRecorder()
+        recorder.init(obs['agentview_image'])
     obs = process_obs(obs, nets, device, config.dataset.image_keys, config.dataset.state_keys)
 
     # keep a queue of last 2 steps of observations
@@ -92,6 +101,7 @@ def run_one_eval(env, nets: torch.nn.Module, config: DiffusionModelRunConfig, st
     rewards = list()
     done = False
     step_idx = 0
+
 
     while not done:
         B = 1
@@ -167,6 +177,11 @@ def run_one_eval(env, nets: torch.nn.Module, config: DiffusionModelRunConfig, st
         for i in range(len(action)):
             # stepping env
             obs, reward, done, _ = env.step(action[i])
+
+            if save_path is not None:
+                recorder.record(obs['agentview_image'])
+
+
             if render:
                 env.render()
             obs = process_obs(obs, nets, device, config.dataset.image_keys, config.dataset.state_keys)
@@ -177,11 +192,11 @@ def run_one_eval(env, nets: torch.nn.Module, config: DiffusionModelRunConfig, st
             # update progress bar
             step_idx += 1
             if step_idx > max_steps:
+                recorder.save(save_path + "_fail.mp4")
                 return False
-            if done:
-                if reward > 0:
-                    return True
-                return False
+            if reward > 0:
+                recorder.save(save_path + "_success.mp4")
+                return True
 
 if __name__ == "__main__":
     main(EvalConfig())

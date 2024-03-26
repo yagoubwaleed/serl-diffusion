@@ -1,3 +1,8 @@
+"""
+This file is a demo collection script that you can use on the realworld franka
+in order to collect demos for imitation learning.
+"""
+
 import gymnasium as gym
 from tqdm import tqdm
 import numpy as np

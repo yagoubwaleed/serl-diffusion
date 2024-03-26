@@ -8,3 +8,5 @@ submitit
 h5py
 robosuite
 matplotlib
+numpy
+imageio[ffmpeg]

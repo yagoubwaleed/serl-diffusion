@@ -79,8 +79,7 @@ def instantiate_model_artifacts(cfg: DiffusionModelRunConfig, model_only: bool =
             image_keys=cfg.dataset.image_keys
         )
     else:
-        raise ValueError(f"Dataset type {cfg.dataset.type} not recognized. Options are SERL or HDF5.)")
-
+        raise ValueError(f"Dataset type {cfg.dataset.type} not recognized. Options are SERL or HDF5 or Jacob.)")
 
     stats = dataset.stats
 

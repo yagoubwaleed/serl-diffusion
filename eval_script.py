@@ -17,8 +17,6 @@ from franka_env.envs.wrappers import (
 )
 
 
-
-
 @dataclass
 class EvalConfig:
     hydra: ExperimentHydraConfig = ExperimentHydraConfig()
