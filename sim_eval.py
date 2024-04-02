@@ -1,57 +1,98 @@
 import collections
+import json
+import os
+from typing import Callable, Union
+import robosuite as suite
 from dataclasses import dataclass
-
-import gymnasium as gym
-import hydra
 import numpy as np
 import torch
-from tqdm.auto import tqdm
-
-from diffusion_policy.configs import ExperimentHydraConfig, DiffusionModelRunConfig
-from diffusion_policy.make_networks import instantiate_model_artifacts
+from tqdm import tqdm
+from diffusion_policy.configs import DiffusionModelRunConfig, DatasetConfig
 from diffusion_policy.dataset import normalize_data, unnormalize_data
-from franka_env.envs.wrappers import (
-    GripperCloseEnv,
-    Quat2EulerWrapper,
-    SERLObsWrapper
-)
+from diffusion_policy.make_networks import instantiate_model_artifacts
+from utils.video_recorder import VideoRecorder
 
 
 @dataclass
 class EvalConfig:
-    hydra: ExperimentHydraConfig = ExperimentHydraConfig()
-    checkpoint_path: str = "${hydra:runtime.cwd}/outputs/checkpoint_w_60_trajectories.pt"
-    max_steps: int = 100
+    render: bool = False
+    video_save_path: Union[str, None] = "outputs/16_epoch_videos"
+    max_steps: int = 500
+    model_checkpoint: str = "16_epoch_peg.pt"
+    sim_json_path: str = "data/square_peg.json"
     num_eval_episodes: int = 20
 
-cs = hydra.core.config_store.ConfigStore.instance()
-cs.store(name="eval_config", node=EvalConfig)
 
 
-def process_obs(obs, nets, device):
+def main(cfg: EvalConfig):
+    metadata = json.load(open(cfg.sim_json_path, "r"))
+    kwargs = metadata["env_kwargs"]
+    if cfg.render:
+        kwargs["has_renderer"] = True
+    if cfg.video_save_path is not None:
+        os.makedirs(cfg.video_save_path, exist_ok=True)
+
+    env = suite.make(
+        env_name=metadata["env_name"],
+        **kwargs
+    )
+
+
+    checkpoint = torch.load(cfg.model_checkpoint, map_location='cuda')
+    diff_run_config: DiffusionModelRunConfig = checkpoint['config']
+
+    nets, noise_scheduler, device = instantiate_model_artifacts(diff_run_config, model_only=True)
+    nets.load_state_dict(checkpoint['state_dict'])
+    print('Pretrained weights loaded.')
+    stats = checkpoint['stats']
+    successes = 0
+    for i in tqdm(range(cfg.num_eval_episodes), desc='Evaluating'):
+        succeeded = run_one_eval(env=env, nets=nets, config=diff_run_config, stats=stats,
+                                 noise_scheduler=noise_scheduler,
+                                 device=device, max_steps=cfg.max_steps, render=cfg.render,
+                                 save_path=cfg.video_save_path + f"/episode_{i}")
+        if succeeded:
+            successes += 1
+    # Round to the 3rd decimal place
+    success_rate = round(successes / cfg.num_eval_episodes, 3)
+    print(f'Success rate: {success_rate}')
+
+def process_obs(obs, nets, device, image_keys, state_keys):
     # This function processes the observation such that they can just be fed into the model.
     # It should return a dictionary with the following keys
     # 'embed': The image embeddings
     # 'state': The state of the environment
     # You can change how you get this information depending on the environment.
+    # print(obs.keys())
 
-    state = obs['state']
+
+    state = [obs[state_key] for state_key in state_keys]
+    # state.insert(3, np.sinh(obs['robot0_joint_pos_sin']))
+    state = np.concatenate(state, axis=-1)
+    imgs = [np.array(obs[key]) for key in image_keys]
+
     with torch.no_grad():
-        im1 = torch.tensor(obs['wrist_1'], dtype=torch.float32).permute(2, 0, 1).to(device)
-        im2 = torch.tensor(obs['wrist_2'], dtype=torch.float32).permute(2, 0, 1).to(device)
-        im_stack = torch.stack([im1, im2], dim=0)
-        images = nets['vision_encoder'](im_stack).cpu().flatten().numpy()
+        images = []
+        for key in image_keys:
+            img = torch.tensor(obs[key], dtype=torch.float32).permute(2, 0, 1).to(device)
+            images.append(img)
+        
+        imgs = torch.stack(images).to(device)
+        images = nets['vision_encoder'](imgs).cpu().flatten().numpy()
     return {
         'embed': images,
         'state': state
     }
 
 
-def run_one_eval(env: gym.Env, nets: torch.nn.Module, config: DiffusionModelRunConfig, stats, noise_scheduler, device,
-                 max_steps: int) -> bool:
+def run_one_eval(env, nets: torch.nn.Module, config: DiffusionModelRunConfig, stats, noise_scheduler, device,
+                 max_steps: int, render=True, save_path: Union[str, None]= None) -> bool:
     # get first observation
-    obs, _ = env.reset()
-    obs = process_obs(obs, nets, device)
+    obs = env.reset()
+    if save_path is not None:
+        recorder = VideoRecorder()
+        recorder.init(obs['agentview_image'])
+    obs = process_obs(obs, nets, device, config.dataset.image_keys, config.dataset.state_keys)
 
     # keep a queue of last 2 steps of observations
     obs_deque = collections.deque(
@@ -60,6 +101,7 @@ def run_one_eval(env: gym.Env, nets: torch.nn.Module, config: DiffusionModelRunC
     rewards = list()
     done = False
     step_idx = 0
+
 
     while not done:
         B = 1
@@ -134,9 +176,15 @@ def run_one_eval(env: gym.Env, nets: torch.nn.Module, config: DiffusionModelRunC
         # without replanning
         for i in range(len(action)):
             # stepping env
-            obs, reward, done, _, info = env.step(action[i])
-            # save observations
-            obs = process_obs(obs, nets, device)
+            obs, reward, done, _ = env.step(action[i])
+
+            if save_path is not None:
+                recorder.record(obs['agentview_image'])
+
+
+            if render:
+                env.render()
+            obs = process_obs(obs, nets, device, config.dataset.image_keys, config.dataset.state_keys)
             obs_deque.append(obs)
             # and reward/vis
             rewards.append(reward)
@@ -144,41 +192,11 @@ def run_one_eval(env: gym.Env, nets: torch.nn.Module, config: DiffusionModelRunC
             # update progress bar
             step_idx += 1
             if step_idx > max_steps:
+                recorder.save(save_path + "_fail.mp4")
                 return False
-            if done:
-                if reward > 0:
-                    return True
-                return False
-
-
-@hydra.main(version_base=None, config_name="eval_config")
-def main(cfg: EvalConfig):
-    checkpoint = torch.load(cfg.checkpoint_path, map_location='cuda')
-    diff_run_config: DiffusionModelRunConfig = checkpoint['config']
-
-    nets, noise_scheduler, device = instantiate_model_artifacts(diff_run_config, model_only=True)
-    nets.load_state_dict(checkpoint['state_dict'])
-    print('Pretrained weights loaded.')
-    stats = checkpoint['stats']
-
-    env = gym.make(
-        "FrankaPegInsert-Vision-v0",
-        fake_env=False,
-
-    )
-    env = GripperCloseEnv(env)
-    env = Quat2EulerWrapper(env)
-    env = SERLObsWrapper(env)
-    successes = 0
-    for _ in tqdm(range(cfg.num_eval_episodes), desc='Evaluating'):
-        succeeded = run_one_eval(env=env, nets=nets, config=diff_run_config, stats=stats, noise_scheduler=noise_scheduler,
-                     device=device, max_steps=cfg.max_steps)
-        if succeeded:
-            successes += 1
-    # Round to the 3rd decimal place
-    success_rate = round(successes / cfg.num_eval_episodes, 3)
-    print(f'Success rate: {success_rate}')
-
+            if reward > 0:
+                recorder.save(save_path + "_success.mp4")
+                return True
 
 if __name__ == "__main__":
-    main()
+    main(EvalConfig())

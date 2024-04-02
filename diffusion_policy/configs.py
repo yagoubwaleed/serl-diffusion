@@ -41,24 +41,40 @@ class ExperimentHydraConfig(HydraConf):
         "chdir": True
     })
 
+@dataclass
+class DatasetConfig:
+    # SERL type is the data from record_demos, HDF5 is the type outputed from robomimic, Jacob is the
+    # data from process_data.py
+    type: str = "Jacob"  # Options are SERL or HDF5 or Jacob
+    dataset_path: str = "${hydra:runtime.cwd}/data/peg_data.pkl" # Path to your training datset
+    num_traj: int = -1 # Number of trajectories to train on. -1 is all of them
+
+    # The keys from observations that we use for the inputs to our model
+    image_keys: list = field(default_factory=lambda: ['agentview_image', 'robot0_eye_in_hand_image', 'birdview_image'])
+    state_keys: list = field(default_factory=lambda:['robot0_proprio-state', 'object-state'])
 
 @dataclass
 class DiffusionModelRunConfig:
     hydra: ExperimentHydraConfig = ExperimentHydraConfig()
+    dataset: DatasetConfig = DatasetConfig()
     device: str = "cuda"
-    num_trajs: int = 10
-    batch_size: int = 64
-    num_epochs: int = 6
-    checkpoint_path: str = "${hydra:runtime.cwd}/${checkpoint_name: ${num_trajs}}"
-    dataset_path: str = "${hydra:runtime.cwd}/peg_insert_100_demos_2024-02-11_13-35-54.pkl"
-    with_state: bool = True
-    state_len: int = 19
-    action_dim: int = 6
-    pred_horizon: int = 16
-    obs_horizon: int = 2
+    checkpoint_path: str = "${hydra:runtime.cwd}/jacob_dataformat_image_propreo.pt"
+
+    batch_size: int = 256//2
+    num_epochs: int = 16
+
+    # If with_state, uses the state keys. If without doesn't and state len does not matter
+    with_state: bool = False
+    # Length of the concatenated state
+    state_len: int = 42
+    # Number of images in the observation. Should be equal to the length of image_keys
+    num_cameras: int = 3
+
+    action_dim: int = 7
+    pred_horizon: int = 12
+    obs_horizon: int = 4
     action_horizon: int = 8
     num_diffusion_iters: int = 100
-    num_cameras: int = 2
 
 
 

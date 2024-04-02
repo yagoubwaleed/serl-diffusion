@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from diffusion_policy.networks import ConditionalUnet1D
 from diffusers import DDPMScheduler, EMAModel, get_scheduler
-from diffusion_policy.dataset import SERLImageDataset
+from diffusion_policy.dataset import SERLImageDataset, HD5PYDataset, JacobPickleDataset
 from diffusion_policy.networks import get_resnet, replace_bn_with_gn
 from diffusion_policy.configs import DiffusionModelRunConfig
 
@@ -50,13 +50,37 @@ def instantiate_model_artifacts(cfg: DiffusionModelRunConfig, model_only: bool =
     if model_only:
         return nets, noise_scheduler, device
     # create dataset from file
-    dataset = SERLImageDataset(
-        dataset_path=cfg.dataset_path,
-        pred_horizon=cfg.pred_horizon,
-        obs_horizon=cfg.obs_horizon,
-        action_horizon=cfg.action_horizon,
-        num_trajectories=cfg.num_trajs,
-    )
+    if cfg.dataset.type == 'SERL':
+        dataset = SERLImageDataset(
+            dataset_path=cfg.dataset.dataset_path,
+            pred_horizon=cfg.pred_horizon,
+            obs_horizon=cfg.obs_horizon,
+            action_horizon=cfg.action_horizon,
+            num_trajectories=cfg.dataset.num_traj,
+        )
+    elif cfg.dataset.type == 'HDF5':
+        dataset = HD5PYDataset(
+            dataset_path=cfg.dataset.dataset_path,
+            pred_horizon=cfg.pred_horizon,
+            obs_horizon=cfg.obs_horizon,
+            action_horizon=cfg.action_horizon,
+            num_trajectories=cfg.dataset.num_traj,
+            state_keys=cfg.dataset.state_keys,
+            image_keys=cfg.dataset.image_keys
+        )
+    elif cfg.dataset.type == 'Jacob':
+        dataset = JacobPickleDataset(
+            dataset_path=cfg.dataset.dataset_path,
+            pred_horizon=cfg.pred_horizon,
+            obs_horizon=cfg.obs_horizon,
+            action_horizon=cfg.action_horizon,
+            num_trajectories=cfg.dataset.num_traj,
+            state_keys=cfg.dataset.state_keys,
+            image_keys=cfg.dataset.image_keys
+        )
+    else:
+        raise ValueError(f"Dataset type {cfg.dataset.type} not recognized. Options are SERL or HDF5 or Jacob.)")
+
     stats = dataset.stats
 
     # create dataloader
@@ -67,7 +91,7 @@ def instantiate_model_artifacts(cfg: DiffusionModelRunConfig, model_only: bool =
         shuffle=True,
         # accelerate cpu-gpu transfer
         pin_memory=True,
-        # don't kill worker process afte each epoch
+        # don't kill worker process after each epoch
         persistent_workers=True
     )
 
