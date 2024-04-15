@@ -45,8 +45,11 @@ The structure of the repo is as follows:
 ## Example Usage:
 1. In a separate terminal,run the robot server, potentially modifying the default flags. (make sure the franka has FCI activated)
     ```bash
+    killall -9 rosmaster
     python serl_robot_infra/robot_servers/franka_server.py
     ```
+    You might get a jacobian error. This is fine. The gripper might also be very weird spewing error messages. In this case, close and reopen your terminal
+
 2. Record demonstrations with the space mouse. Change the variable success_needed to modify the number of demonstrations you will collect
     ```bash
     python record_demos.py
