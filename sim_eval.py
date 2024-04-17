@@ -143,7 +143,7 @@ def run_one_eval(env, nets: torch.nn.Module, config: DiffusionModelRunConfig, st
             naction = noisy_action
 
             # init scheduler
-            noise_scheduler.set_timesteps(config.num_diffusion_iters)
+            noise_scheduler.set_timesteps(config.num_eval_diffusion_iters)
 
             for k in noise_scheduler.timesteps:
                 # predict noise

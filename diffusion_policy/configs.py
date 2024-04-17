@@ -76,6 +76,7 @@ class DiffusionModelRunConfig:
     obs_horizon: int = 4
     action_horizon: int = 8
     num_diffusion_iters: int = 100
+    num_eval_diffusion_iters: int = 100
 
 
 

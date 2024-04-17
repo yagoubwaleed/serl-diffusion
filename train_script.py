@@ -77,7 +77,6 @@ def run_training(cfg: DiffusionModelRunConfig):
 
                     # L2 loss
                     loss = nn.functional.mse_loss(noise_pred, noise)
-                    time.sleep(2)
 
                     # optimize
                     loss.backward()
