@@ -45,13 +45,13 @@ class ExperimentHydraConfig(HydraConf):
 class DatasetConfig:
     # SERL type is the data from record_demos, HDF5 is the type outputed from robomimic, Jacob is the
     # data from process_data.py
-    type: str = "Jacob"  # Options are SERL or HDF5 or Jacob
-    dataset_path: str = "${hydra:runtime.cwd}/data/peg_data.pkl" # Path to your training datset
+    type: str = "Jacob"  # Options are SERL or HDF5 or Jacob or D4RL
+    dataset_path: str = "${hydra:runtime.cwd}/data/peg_data.pkl" # Path to your training dataset
     num_traj: int = -1 # Number of trajectories to train on. -1 is all of them
 
     # The keys from observations that we use for the inputs to our model
     image_keys: list = field(default_factory=lambda: ['agentview_image', 'robot0_eye_in_hand_image', 'birdview_image'])
-    state_keys: list = field(default_factory=lambda:['robot0_proprio-state', 'object-state'])
+    state_keys: list = field(default_factory=lambda: ['robot0_proprio-state', 'object-state'])
 
 @dataclass
 class DiffusionModelRunConfig:
@@ -67,6 +67,7 @@ class DiffusionModelRunConfig:
     with_state: bool = False
     # Length of the concatenated state
     state_len: int = 42
+    with_image: bool = True
     # Number of images in the observation. Should be equal to the length of image_keys
     num_cameras: int = 3
 

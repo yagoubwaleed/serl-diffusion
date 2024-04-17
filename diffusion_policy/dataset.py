@@ -126,7 +126,7 @@ class BaseDataset(torch.utils.data.Dataset):
 
 class JacobPickleDataset(BaseDataset):
     def __init__(self, dataset_path: str, pred_horizon: int, obs_horizon: int, action_horizon: int,
-                 num_trajectories: int, image_keys, state_keys):
+                 num_trajectories: int, image_keys, state_keys, action_key="action"):
         data = pickle.load(open(dataset_path, 'rb'))
 
         actions = []
@@ -150,9 +150,10 @@ class JacobPickleDataset(BaseDataset):
 
                 # (T, H, W, C) -> (T, C, H, W)
                 imgs[i] = np.moveaxis(imgs[i], 3, 1)
-            imgs = np.stack(imgs, axis=1)
+            # (T, N, C, H, W)
+            imgs = np.stack(imgs, axis=1) if len(imgs) else np.empty((len(state), 0, 1, 96, 96))
             images.append(imgs)
-            actions.append(np.array(trajectory['action']))
+            actions.append(np.array(trajectory[action_key]))
             if len(episode_ends) == 0:
                 episode_ends.append(len(state))
             else:
@@ -195,6 +196,11 @@ class JacobPickleDataset(BaseDataset):
         self.action_horizon = action_horizon
         self.obs_horizon = obs_horizon
 
+
+class D4RLDataset(JacobPickleDataset):
+    def __init__(self, dataset_path: str, pred_horizon: int, obs_horizon: int, action_horizon: int,
+                 num_trajectories: int, image_keys):
+        super().__init__(dataset_path, pred_horizon, obs_horizon, action_horizon, num_trajectories, image_keys, ["observations"], "actions")
 
 class HD5PYDataset(BaseDataset):
     def __init__(self, dataset_path: str, pred_horizon: int, obs_horizon: int, action_horizon: int,
