@@ -7,6 +7,7 @@ import numpy as np
 import torch
 from tqdm.auto import tqdm
 
+from diffusion_policy.policy import DiffusionPolicy
 from diffusion_policy.configs import ExperimentHydraConfig, DiffusionModelRunConfig
 from diffusion_policy.make_networks import instantiate_model_artifacts
 from diffusion_policy.dataset import normalize_data, unnormalize_data
@@ -49,86 +50,18 @@ def process_obs(obs, nets, device):
 
 def run_one_eval(env: gym.Env, nets: torch.nn.Module, config: DiffusionModelRunConfig, stats, noise_scheduler, device,
                  max_steps: int) -> bool:
+    policy = DiffusionPolicy(config, nets, noise_scheduler, stats, device)
     # get first observation
     obs, _ = env.reset()
-    obs = process_obs(obs, nets, device)
+    policy.add_obs(obs)
 
-    # keep a queue of last 2 steps of observations
-    obs_deque = collections.deque(
-        [obs] * config.obs_horizon, maxlen=config.obs_horizon)
     # save visualization and rewards
     rewards = list()
     done = False
     step_idx = 0
 
     while not done:
-        B = 1
-        # stack the last obs_horizon number of observations
-        images = np.stack([x['embed'] for x in obs_deque])
-        if config.with_state:
-            agent_poses = np.stack([x['state'] for x in obs_deque])
-
-            # normalize observation
-            nagent_poses = normalize_data(agent_poses, stats=stats['state'])
-            nagent_poses = torch.from_numpy(nagent_poses).to(device, dtype=torch.float32)
-
-        # images are already normalized to [0,1]
-        nimages = images
-
-        # device transfer
-        nimages = torch.from_numpy(nimages).to(device, dtype=torch.float32)
-        # (2,3,96,96)
-        # (2,2)
-
-        # infer action
-        with torch.no_grad():
-            # get image features
-            image_features = nimages
-            # (2,1024)
-
-            # concat with low-dim observations
-            if config.with_state:
-                obs_features = torch.cat([image_features, nagent_poses], dim=-1)
-            else:
-                obs_features = image_features
-
-            # reshape observation to (B,obs_horizon*obs_dim)
-            obs_cond = obs_features.unsqueeze(0).flatten(start_dim=1)
-
-            # initialize action from Gaussian noise
-            noisy_action = torch.randn(
-                (B, config.pred_horizon, config.action_dim), device=device)
-            naction = noisy_action
-
-            # init scheduler
-            noise_scheduler.set_timesteps(config.num_eval_diffusion_iters)
-
-            for k in noise_scheduler.timesteps:
-                # predict noise
-                noise_pred = nets['noise_pred_net'](
-                    sample=naction,
-                    timestep=k,
-                    global_cond=obs_cond
-                )
-
-                # inverse diffusion step (remove noise)
-                naction = noise_scheduler.step(
-                    model_output=noise_pred,
-                    timestep=k,
-                    sample=naction
-                ).prev_sample
-
-        # unnormalize action
-        naction = naction.detach().to('cpu').numpy()
-        # (B, pred_horizon, action_dim)
-        naction = naction[0]
-        action_pred = unnormalize_data(naction, stats=stats['action'])
-
-        # only take action_horizon number of actions
-        start = config.obs_horizon - 1
-        end = start + config.action_horizon
-        action = action_pred[start:end, :]
-        # (action_horizon, action_dim)
+        action = policy.get_action()
 
         # execute action_horizon number of steps
         # without replanning
@@ -136,8 +69,7 @@ def run_one_eval(env: gym.Env, nets: torch.nn.Module, config: DiffusionModelRunC
             # stepping env
             obs, reward, done, _, info = env.step(action[i])
             # save observations
-            obs = process_obs(obs, nets, device)
-            obs_deque.append(obs)
+            policy.add_obs(obs)
             # and reward/vis
             rewards.append(reward)
 
