@@ -22,7 +22,6 @@ def run_training(cfg: DiffusionModelRunConfig):
     nets, ema, noise_scheduler, optimizer, lr_scheduler, dataloader, stats, device = instantiate_model_artifacts(cfg,
                                                                                                                  model_only=False)
     losses = []
-    vision_feature_dim = 512 * cfg.num_cameras
     with tqdm(range(cfg.num_epochs), desc='Epoch', ) as tglobal:
         # epoch loop
         for epoch_idx in tglobal:
@@ -32,21 +31,29 @@ def run_training(cfg: DiffusionModelRunConfig):
                 for nbatch in tepoch:
                     # data normalized in dataset
                     # device transfer
-                    nimage = nbatch['image'][:, :cfg.obs_horizon].to(device)
+
                     naction = nbatch['action'].to(device)
-                    B = nimage.shape[0]
+                    obs_features = None
+                    if cfg.with_image:
+                        nimage = nbatch['image'][:, :cfg.obs_horizon].to(device)
+                        B = nimage.shape[0]
+                        image_features = nets['vision_encoder'](
+                            nimage.flatten(end_dim=2))
 
-                    image_features = nets['vision_encoder'](
-                        nimage.flatten(end_dim=2))
-
-                    image_features = image_features.reshape(
-                        B, cfg.obs_horizon, vision_feature_dim)
-                    # (B,obs_horizon,D)
-                    # concatenate vision feature and low-dim obs
-                    obs_features = image_features
+                        vision_feature_dim = 512 * cfg.num_cameras
+                        image_features = image_features.reshape(
+                            B, cfg.obs_horizon, vision_feature_dim)
+                        # (B,obs_horizon,D)
+                        # concatenate vision feature and low-dim obs
+                        obs_features = image_features
                     if cfg.with_state:
                         nagent_pos = nbatch['state'][:, :cfg.obs_horizon].to(device)
-                        obs_features = torch.cat([image_features, nagent_pos], dim=-1)
+                        B = nagent_pos.shape[0]
+                        if obs_features is not None:
+                            obs_features = torch.cat([obs_features, nagent_pos], dim=-1)
+                        else:
+                            obs_features = nagent_pos
+                    assert obs_features is not None
 
                     obs_cond = obs_features.flatten(start_dim=1)
                     # (B, obs_horizon * obs_dim)
@@ -70,7 +77,6 @@ def run_training(cfg: DiffusionModelRunConfig):
 
                     # L2 loss
                     loss = nn.functional.mse_loss(noise_pred, noise)
-                    time.sleep(2)
 
                     # optimize
                     loss.backward()

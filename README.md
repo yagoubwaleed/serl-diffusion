@@ -62,6 +62,31 @@ The structure of the repo is as follows:
     ```bash
     python eval_script.py
     ```
+
+### Usage as a library in other codebases
+
+1. Install this library:
+    ```bash
+    cd path/to/repo
+    pip install -e .
+    ```
+
+2. Use in robot code:
+    ```python
+    from diffusion_policy.policy import DiffusionPolicy
+
+    policy = DiffusionPolicy.load("chkpt.pt")
+
+    while True:
+        obs = ... get observation ...
+        actions = policy.get_action(obs)
+        ... execute actions ...
+    ```
+
+`DiffusionPolicy` supports async inference, where observations can be placed into the policy buffer from the control thread.
+Then an inference thread can predict actions asynchronously without slowing down the control thread.
+An example of this can be found [here](https://github.com/personalrobotics/tycho_diffusion/blob/main/src/diffusion.py).
+
 ## Training using robosuite:
 1. Download the data that you want to use. To do this, you need to have cloned and installed the robomimic environment.
 You can find the instructions [here](https://robomimic.github.io/docs/introduction/getting_started.html) which will eventually 

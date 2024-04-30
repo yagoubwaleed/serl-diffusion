@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from diffusion_policy.networks import ConditionalUnet1D
 from diffusers import DDPMScheduler, EMAModel, get_scheduler
-from diffusion_policy.dataset import SERLImageDataset, HD5PYDataset, JacobPickleDataset
+from diffusion_policy.dataset import SERLImageDataset, HD5PYDataset, JacobPickleDataset, D4RLDataset
 from diffusion_policy.networks import get_resnet, replace_bn_with_gn
 from diffusion_policy.configs import DiffusionModelRunConfig
 
@@ -14,10 +14,6 @@ def instantiate_model_artifacts(cfg: DiffusionModelRunConfig, model_only: bool =
     If not model only, returns network, ema, noise scheduler, optimizer, lr_scheduler, dataloader, stats, device
     '''
     device = torch.device('cuda')
-
-    vision_feature_dim = 512 * cfg.num_cameras
-    vision_encoder = get_resnet('resnet18')
-    vision_encoder = replace_bn_with_gn(vision_encoder)
 
     noise_scheduler = DDPMScheduler(
         num_train_timesteps=cfg.num_diffusion_iters,
@@ -31,7 +27,11 @@ def instantiate_model_artifacts(cfg: DiffusionModelRunConfig, model_only: bool =
     )
 
     # ResNet18 has output dim of 512
-    obs_dim = vision_feature_dim + (cfg.state_len if cfg.with_state else 0)
+    obs_dim = 0
+    if cfg.with_image:
+        obs_dim += 512 * cfg.num_cameras
+    if cfg.with_state:
+        obs_dim += cfg.state_len
 
     # create network object
     noise_pred_net = ConditionalUnet1D(
@@ -40,10 +40,15 @@ def instantiate_model_artifacts(cfg: DiffusionModelRunConfig, model_only: bool =
     )
 
     # the final arch has 2 parts
-    nets = nn.ModuleDict({
-        'vision_encoder': vision_encoder,
+    nets_dict = {
         'noise_pred_net': noise_pred_net
-    })
+    }
+    if cfg.with_image:
+        vision_encoder = get_resnet('resnet18')
+        vision_encoder = replace_bn_with_gn(vision_encoder)
+        nets_dict["vision_encoder"] = vision_encoder
+
+    nets = nn.ModuleDict(nets_dict)
     # device transfer
     _ = nets.to(device)
 
@@ -78,8 +83,17 @@ def instantiate_model_artifacts(cfg: DiffusionModelRunConfig, model_only: bool =
             state_keys=cfg.dataset.state_keys,
             image_keys=cfg.dataset.image_keys
         )
+    elif cfg.dataset.type == 'D4RL':
+        dataset = D4RLDataset(
+            dataset_path=cfg.dataset.dataset_path,
+            pred_horizon=cfg.pred_horizon,
+            obs_horizon=cfg.obs_horizon,
+            action_horizon=cfg.action_horizon,
+            num_trajectories=cfg.dataset.num_traj,
+            image_keys=cfg.dataset.image_keys
+        )
     else:
-        raise ValueError(f"Dataset type {cfg.dataset.type} not recognized. Options are SERL or HDF5 or Jacob.)")
+        raise ValueError(f"Dataset type {cfg.dataset.type} not recognized. Options are SERL or HDF5 or Jacob or D4RL.)")
 
     stats = dataset.stats
 
