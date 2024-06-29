@@ -10,3 +10,4 @@ robosuite
 matplotlib
 numpy
 imageio[ffmpeg]
+oculus_reader@git+https://github.com/rail-berkeley/oculus_reader.git

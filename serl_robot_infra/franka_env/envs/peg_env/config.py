@@ -11,28 +11,25 @@ class PegEnvConfig(DefaultEnvConfig):
         "wrist_2": "130322270807",
     }
     TARGET_POSE = np.array(
-        [
-            0.4043974352110955,
-            0.049018421520937557,
-            0.07565183234499752,
-            3.1327978, 
-            0.0250633,
-            -0.0024956 
-        ]
-    )
+        [0.5274304758420084,
+         0.0886595901532952,
+         0.07811173626351817,
+         3.1149106,
+         0.0602937,
+         0.1077098])
     RESET_POSE = TARGET_POSE + np.array([0.0, 0.0, 0.1, 0.0, 0.0, 0.0])
     REWARD_THRESHOLD: np.ndarray = np.array([0.01, 0.01, 0.01, 0.2, 0.2, 0.2])
-    ACTION_SCALE = np.array([0.05, 0.2, 1])
+    ACTION_SCALE = np.array([0.1, 0.3, 1])
     RANDOM_RESET = True
     RANDOM_XY_RANGE = 0.05
-    RANDOM_RZ_RANGE = np.pi / 9
+    RANDOM_RZ_RANGE = np.pi / 7
     ABS_POSE_LIMIT_LOW = np.array(
         [
             TARGET_POSE[0] - RANDOM_XY_RANGE,
             TARGET_POSE[1] - RANDOM_XY_RANGE,
             TARGET_POSE[2],
-            TARGET_POSE[3] - 0.01,
-            TARGET_POSE[4] - 0.01,
+            TARGET_POSE[3] - 0.03,
+            TARGET_POSE[4] - 0.03,
             TARGET_POSE[5] - RANDOM_RZ_RANGE,
         ]
     )
@@ -41,8 +38,8 @@ class PegEnvConfig(DefaultEnvConfig):
             TARGET_POSE[0] + RANDOM_XY_RANGE,
             TARGET_POSE[1] + RANDOM_XY_RANGE,
             TARGET_POSE[2] + 0.1,
-            TARGET_POSE[3] + 0.01,
-            TARGET_POSE[4] + 0.01,
+            TARGET_POSE[3] + 0.03,
+            TARGET_POSE[4] + 0.03,
             TARGET_POSE[5] + RANDOM_RZ_RANGE,
         ]
     )
