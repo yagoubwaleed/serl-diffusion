@@ -315,7 +315,7 @@ class SERLImageDataset(BaseDataset):
             if data[i]['dones']:
                 episode_ends.append(i + 1)
                 # Temp solution
-                if len(episode_ends) >= num_trajectories:
+                if len(episode_ends) >= num_trajectories and num_trajectories != -1:
                     break
 
         actions = np.array(actions).astype(np.float32)
