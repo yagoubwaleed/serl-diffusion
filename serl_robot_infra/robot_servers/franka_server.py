@@ -10,7 +10,8 @@ import subprocess
 from scipy.spatial.transform import Rotation as R
 from absl import app, flags
 
-from franka_msgs.msg import ErrorRecoveryActionGoal, FrankaState, ZeroJacobian
+from franka_msgs.msg import ErrorRecoveryActionGoal, FrankaState
+from serl_franka_controllers.msg import ZeroJacobian
 import geometry_msgs.msg as geom_msg
 from dynamic_reconfigure.client import Client as ReconfClient
 
@@ -18,9 +19,16 @@ FLAGS = flags.FLAGS
 flags.DEFINE_string(
     "robot_ip", "172.16.0.2", "IP address of the franka robot's controller box"
 )
-flags.DEFINE_string("gripper_ip", "192.168.1.114", "IP address of the robotiq gripper")
+flags.DEFINE_string(
+    "gripper_ip", "192.168.1.114", "IP address of the robotiq gripper if being used"
+)
 flags.DEFINE_string(
     "gripper_type", "Franka", "Type of gripper to use: Robotiq, Franka, or None"
+)
+flags.DEFINE_list(
+    "reset_joint_target",
+    [0, 0, 0, -1.9, -0, 2, 0],
+    "Target joint angles for the robot to reset to",
 )
 
 
@@ -42,13 +50,13 @@ class FrankaServer:
         self.resetpub = rospy.Publisher(
             "/franka_control/error_recovery/goal", ErrorRecoveryActionGoal, queue_size=1
         )
-        self.state_sub = rospy.Subscriber(
-            "franka_state_controller/franka_states", FrankaState, self._set_currpos
-        )
         self.jacobian_sub = rospy.Subscriber(
             "/cartesian_impedance_controller/franka_jacobian",
             ZeroJacobian,
             self._set_jacobian,
+        )
+        self.state_sub = rospy.Subscriber(
+            "franka_state_controller/franka_states", FrankaState, self._set_currpos
         )
 
     def start_impedance(self):
@@ -131,7 +139,7 @@ class FrankaServer:
         self.start_impedance()
         print("impedance STARTED")
 
-    def move(self, pose):
+    def move(self, pose: list):
         """Moves to a pose: [x, y, z, qx, qy, qz, qw]"""
         assert len(pose) == 7
         msg = geom_msg.PoseStamped()
@@ -150,7 +158,13 @@ class FrankaServer:
         self.q = np.array(list(msg.q)).reshape((7,))
         self.force = np.array(list(msg.K_F_ext_hat_K)[:3])
         self.torque = np.array(list(msg.K_F_ext_hat_K)[3:])
-        self.vel = self.jacobian @ self.dq
+        try:
+            self.vel = self.jacobian @ self.dq
+        except:
+            self.vel = np.zeros(6)
+            rospy.logwarn(
+                "Jacobian not set, end-effector velocity temporarily not available"
+            )
 
     def _set_jacobian(self, msg):
         jacobian = np.array(list(msg.zero_jacobian)).reshape((6, 7), order="F")
@@ -161,12 +175,12 @@ class FrankaServer:
 
 
 def main(_):
-    RESET_JOINT_TARGET = [0, 0, 0, -1.9, -0, 2, 0]
     ROS_PKG_NAME = "serl_franka_controllers"
 
     ROBOT_IP = FLAGS.robot_ip
     GRIPPER_IP = FLAGS.gripper_ip
     GRIPPER_TYPE = FLAGS.gripper_type
+    RESET_JOINT_TARGET = FLAGS.reset_joint_target
 
     webapp = Flask(__name__)
 
@@ -222,6 +236,12 @@ def main(_):
     @webapp.route("/getpos", methods=["POST"])
     def get_pos():
         return jsonify({"pose": np.array(robot_server.pos).tolist()})
+
+    @webapp.route("/getpos_euler", methods=["POST"])
+    def get_pos_euler():
+        r = R.from_quat(robot_server.pos[3:])
+        euler = r.as_euler("xyz")
+        return jsonify({"pose": np.concatenate([robot_server.pos[:3], euler]).tolist()})
 
     @webapp.route("/getvel", methods=["POST"])
     def get_vel():
@@ -326,7 +346,7 @@ def main(_):
             }
         )
 
-    # precision mode for reset
+    # Route for updating compliance parameters
     @webapp.route("/update_param", methods=["POST"])
     def update_param():
         reconf_client.update_configuration(request.json)
