@@ -289,7 +289,7 @@ class SERLImageDataset(BaseDataset):
                  action_horizon: int,
                  num_trajectories: int = 100,
                  image_keys: list = ['wrist_1', 'wrist_2'],
-                 state_key: str = 'state',
+                 state_keys: list = ['state'],
                  ):
 
         # load the demonstration dataset:
@@ -301,7 +301,9 @@ class SERLImageDataset(BaseDataset):
         episode_ends = []
 
         for i in range(len(data)):
-            states.append(data[i]['observations'][state_key])
+            state = [np.array(data[i]["observations"][state_key]) for state_key in state_keys]
+            state = np.concatenate(state, axis=-1)
+            states.append(state)
             imgs = []
             for key in image_keys:
                 img = data[i]['observations'][key]
@@ -316,27 +318,6 @@ class SERLImageDataset(BaseDataset):
                 if len(episode_ends) >= num_trajectories:
                     break
 
-        # sample num_trajectories number of trajectories
-        # TODO: I do not think this works
-        # if num_trajectories < len(episode_ends):
-
-        #     start_idxs = [0] + episode_ends[:-1]
-        #     #idxs = np.random.choice(range(len(episode_ends)), num_trajectories, replace=False)
-        #     #idxs = np.sort(idxs)
-        #     idxs = np.array([0, 1])
-
-        #     episode_intervals = [(start_idxs[i], episode_ends[i]) for i in idxs]
-        #     actions = np.concatenate([np.array(actions[start: end]) for start, end in episode_intervals], axis=0)
-        #     states = np.concatenate([np.array(states[start: end]) for start, end in episode_intervals], axis=0)
-        #     images = np.concatenate([np.array(images[start: end]) for start, end in episode_intervals], axis=0)
-        #     episode_ends = np.array([ep_end - start for start, ep_end in episode_intervals])
-
-        #     # They are in the form of length of each episode, so we want to sum them together
-        #     episode_ends = np.cumsum(episode_ends)
-        #     # for i in range(len(episode_ends)):
-        #     #     if i > 0:
-        #     #         episode_ends[i] += episode_ends[i - 1]
-        # else:
         actions = np.array(actions).astype(np.float32)
         states = np.array(states).astype(np.float32)
         episode_ends = np.array(episode_ends)
