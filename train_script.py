@@ -95,7 +95,7 @@ def run_training(cfg: DiffusionModelRunConfig):
 
                     # logging
                     loss_cpu = loss.item()
-                    wandb.log(epoch_loss)
+                    wandb.log({"Loss" : epoch_loss})
                     tepoch.set_postfix(loss=loss_cpu)
             tglobal.set_postfix(loss=np.mean(epoch_loss))
             # losses.append(np.mean(epoch_loss))
