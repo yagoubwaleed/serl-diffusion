@@ -8,6 +8,7 @@ submitit
 h5py
 robosuite
 matplotlib
-numpy
+numpy<2
 imageio[ffmpeg]
 oculus_reader@git+https://github.com/rail-berkeley/oculus_reader.git
+wandb

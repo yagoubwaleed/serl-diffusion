@@ -3,6 +3,7 @@ import time
 import hydra
 import numpy as np
 import torch
+import wandb
 import torch.nn as nn
 from tqdm.auto import tqdm
 import matplotlib.pyplot as plt
@@ -19,6 +20,9 @@ def main(cfg: DiffusionModelRunConfig):
 
 
 def run_training(cfg: DiffusionModelRunConfig):
+    wandb.init(
+        name="Serl Diffusion",
+    )
     nets, ema, noise_scheduler, optimizer, lr_scheduler, dataloader, stats, device = instantiate_model_artifacts(cfg,
                                                                                                                  model_only=False)
     losses = []
@@ -91,12 +95,12 @@ def run_training(cfg: DiffusionModelRunConfig):
 
                     # logging
                     loss_cpu = loss.item()
-                    epoch_loss.append(loss_cpu)
+                    wandb.log(epoch_loss)
                     tepoch.set_postfix(loss=loss_cpu)
             tglobal.set_postfix(loss=np.mean(epoch_loss))
-            losses.append(np.mean(epoch_loss))
-            plt.plot(losses)
-            plt.savefig('losses.png')
+            # losses.append(np.mean(epoch_loss))
+            # plt.plot(losses)
+            # plt.savefig('losses.png')
 
     ema_nets = nets
     ema.copy_to(ema_nets.parameters())

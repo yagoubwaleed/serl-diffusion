@@ -301,7 +301,7 @@ class SERLImageDataset(BaseDataset):
         episode_ends = []
 
         for i in range(len(data)):
-            state = [np.array(data[i][state_key]) for state_key in state_keys]
+            state = [np.array(data[i]["observations"][state_key]) for state_key in state_keys]
             state = np.concatenate(state, axis=-1)
             states.append(state)
             imgs = []

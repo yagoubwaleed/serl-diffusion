@@ -62,6 +62,8 @@ def instantiate_model_artifacts(cfg: DiffusionModelRunConfig, model_only: bool =
             obs_horizon=cfg.obs_horizon,
             action_horizon=cfg.action_horizon,
             num_trajectories=cfg.dataset.num_traj,
+            state_keys=cfg.dataset.state_keys,
+            image_keys=cfg.dataset.image_keys,
         )
     elif cfg.dataset.type == 'HDF5':
         dataset = HD5PYDataset(
