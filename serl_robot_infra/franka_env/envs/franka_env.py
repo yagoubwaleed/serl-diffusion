@@ -89,6 +89,7 @@ class FrankaEnv(gym.Env):
         self.currforce = np.zeros((3,))
         self.currtorque = np.zeros((3,))
         self.currjacobian = np.zeros((6, 7))
+        self.closed_gripper = False
 
         self.curr_gripper_pos = 0
         self.lastsent = time.time()
@@ -168,10 +169,12 @@ class FrankaEnv(gym.Env):
 
     def send_gripper_command(self, pos, mode="binary"):
         if mode == "binary":
-            if (pos >= -1) and (pos <= -0.9):  # close gripper
+            if (pos >= -1) and (pos <= -0.9) and not self.closed_gripper:  # close gripper
                 requests.post(self.url + "close_gripper")
-            elif (pos >= 0.9) and (pos <= 1):  # open gripper
+                self.closed_gripper = True
+            elif (pos >= 0.9) and (pos <= 1) and self.closed_gripper:  # open gripper
                 requests.post(self.url + "open_gripper")
+                self.closed_gripper = False
             else:  # do nothing to the gripper
                 return
         elif mode == "continuous":
@@ -338,6 +341,7 @@ class FrankaEnv(gym.Env):
             joint_reset = True
 
         self.go_to_rest(joint_reset=joint_reset)
+        self.send_gripper_command(1)
         self.recover()
         self.curr_path_length = 0
 

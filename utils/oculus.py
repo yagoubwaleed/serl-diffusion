@@ -170,9 +170,10 @@ class VRController:
         target_quat_offset = quat_diff(self.vr_state["quat"], self.vr_origin["quat"])
         quat_action = quat_diff(target_quat_offset, robot_quat_offset)
         euler_action = quat_to_euler(quat_action)
-
+        print(self.vr_state["gripper"])
         # Calculate Gripper Action #
-        gripper_action = 1.0 if self.vr_state["gripper"] > 0.5 else 0.0
+        gripper_action = 1.0 if self.vr_state["gripper"] < 0.5 else -1.0
+
 
         # Calculate Desired Pose #
         target_pos = pos_action + robot_pos
@@ -182,7 +183,7 @@ class VRController:
         # Scale Appropriately #
         pos_action *= self.pos_action_gain
         euler_action *= self.rot_action_gain
-        gripper_action *= self.gripper_action_gain
+        # gripper_action *= self.gripper_action_gain
         lin_vel, rot_vel, gripper_vel = self._limit_velocity(
             pos_action, euler_action, gripper_action
         )
