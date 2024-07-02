@@ -172,13 +172,12 @@ class VRController:
         euler_action = quat_to_euler(quat_action)
 
         # Calculate Gripper Action #
-        gripper_action = self.vr_state["gripper"] - robot_gripper
+        gripper_action = 1.0 if self.vr_state["gripper"] > 0.5 else 0.0
 
         # Calculate Desired Pose #
         target_pos = pos_action + robot_pos
         target_euler = add_angles(euler_action, robot_euler)
         target_cartesian = np.concatenate([target_pos, target_euler])
-        target_gripper = self.vr_state["gripper"]
 
         # Scale Appropriately #
         pos_action *= self.pos_action_gain
@@ -187,15 +186,15 @@ class VRController:
         lin_vel, rot_vel, gripper_vel = self._limit_velocity(
             pos_action, euler_action, gripper_action
         )
-
         # Prepare Return Values #
         info_dict = {
             "target_cartesian_position": target_cartesian,
-            "target_gripper_position": target_gripper,
+            "target_gripper_position": gripper_action,
         }
         # action = np.concatenate([lin_vel, rot_vel, [gripper_vel]])
-        # action = action.clip(-1, 1)
         action = np.concatenate([pos_action, euler_action, [gripper_action]])
+
+        action = np.clip(action, -1, 1)
         # Return #
         if include_info:
             return action, info_dict
