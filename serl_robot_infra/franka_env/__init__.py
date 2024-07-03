@@ -8,6 +8,12 @@ register(
 )
 
 register(
+    id="FrankaPickNPlace-Vision-v0",
+    entry_point="franka_env.envs:picknplace_env:FrankaPickNPlace",
+    max_episode_steps=200,
+)
+
+register(
     id="FrankaPegInsert-Vision-v0",
     entry_point="franka_env.envs.peg_env:FrankaPegInsert",
     max_episode_steps=100,
