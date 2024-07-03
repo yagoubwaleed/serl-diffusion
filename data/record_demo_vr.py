@@ -31,7 +31,7 @@ def _flatten_obs(obs, env):
 
 
 def main(arg):
-    env = gym.make("FrankaPegInsert-Vision-v0")
+    env = gym.make("FrankaPickNPlace-Vision-v0")
     if not arg.gripper:
         env = GripperCloseEnv(env)
     # env = RelativeFrame(env)
@@ -88,8 +88,11 @@ def main(arg):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-g", "--gripper", default=True, help="True means with gripper, false means without gripper")
-    parser.add_argument("-n", "--name", default=None, help="This is the name that you want to save the demos as. If you leave it blank, it will save it with the number of demos and the date and time")
-    parser.add_argument("-f", "--flatten", default=True, help="weather or not to flatten the state obs into one key of state")
+    parser.add_argument("-n", "--name", default=None, help="This is the name that you want to save the demos as. If "
+                                                           "you leave it blank, it will save it with the number of "
+                                                           "demos and the date and time")
+    parser.add_argument("-f", "--flatten", default=True, help="Whether or not to flatten the state obs into one key "
+                                                              "of state")
     args = parser.parse_args()
     print(args)
     main(args)
