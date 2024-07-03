@@ -76,7 +76,7 @@ def main(arg):
                 success_count += 1
                 pbar.update(1)
                 transitions.extend(current_trajectory)
-                print(len(current_trajectory))
+                print(f"Saving trajectory of length {len(current_trajectory)}")
             current_trajectory = []
             obs, _ = env.reset()
 
