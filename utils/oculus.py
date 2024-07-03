@@ -204,8 +204,8 @@ class VRController:
 
     def get_info(self):
         return {
-            "open_gripper": self._state["buttons"]["A"],
-            "close_gripper": self._state["buttons"]["B"],
+            "save_demo": self._state["buttons"]["A"],
+            "discard_demo": self._state["buttons"]["B"],
             "movement_enabled": self._state["movement_enabled"],
             "controller_on": self._state["controller_on"],
         }
@@ -221,6 +221,19 @@ class VRController:
         return self._calculate_action(
             obs_dict["state"], include_info=include_info
         )
+
+    def save_demo(self) -> bool:
+        print("Do you want to save the demo? Press A to save the demo and B to discard the demo")
+
+        # Loop until the user enters what they want to do and then return it
+        while True:
+            info_dict = self.get_info()
+            if info_dict.get("save_demo"):
+                return True
+            elif info_dict.get("discard_demo"):
+                return False
+            else:
+                time.sleep(0.1)
 
 
 def main():

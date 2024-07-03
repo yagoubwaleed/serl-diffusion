@@ -72,7 +72,7 @@ def main(arg):
 
         if done:
             obs, _ = env.reset()
-            if rew > 0:
+            if controller.save_demo():
                 success_count += 1
                 pbar.update(1)
                 transitions.extend(current_trajectory)
