@@ -55,7 +55,6 @@ def main(arg):
 
         next_obs, rew, done, truncated, info = env.step(action=action)
         actions = action
-        # print(actions)
         transition = copy.deepcopy(
             dict(
                 observations=_flatten_obs(obs, env) if arg.flatten else obs,
@@ -69,14 +68,18 @@ def main(arg):
         current_trajectory.append(transition)
 
         obs = next_obs
+        done = done or controller.check_done()
 
         if done:
-            obs, _ = env.reset()
+            _ = env.reset()
             if controller.save_demo():
                 success_count += 1
                 pbar.update(1)
                 transitions.extend(current_trajectory)
+                print(len(current_trajectory))
             current_trajectory = []
+            obs, _ = env.reset()
+
 
     uuid = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     file_name = f"peg_insert_{success_needed}_demos_{uuid}.pkl" if arg.name is None else arg.name

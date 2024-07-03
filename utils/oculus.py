@@ -170,7 +170,7 @@ class VRController:
         target_quat_offset = quat_diff(self.vr_state["quat"], self.vr_origin["quat"])
         quat_action = quat_diff(target_quat_offset, robot_quat_offset)
         euler_action = quat_to_euler(quat_action)
-        print(self.vr_state["gripper"])
+
         # Calculate Gripper Action #
         gripper_action = 1.0 if self.vr_state["gripper"] < 0.5 else -1.0
 
@@ -228,12 +228,17 @@ class VRController:
         # Loop until the user enters what they want to do and then return it
         while True:
             info_dict = self.get_info()
-            if info_dict.get("save_demo"):
+            if info_dict["save_demo"]:
                 return True
-            elif info_dict.get("discard_demo"):
+            elif info_dict["discard_demo"]:
                 return False
             else:
                 time.sleep(0.1)
+
+    def check_done(self) -> bool:
+        info_dict = self.get_info()
+        return info_dict["save_demo"] or info_dict["discard_demo"]
+
 
 
 def main():

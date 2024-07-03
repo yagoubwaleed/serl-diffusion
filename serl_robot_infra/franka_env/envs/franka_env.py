@@ -58,6 +58,7 @@ class DefaultEnvConfig:
     ABS_POSE_LIMIT_LOW = np.zeros((6,))
     COMPLIANCE_PARAM = {}
     PRECISION_PARAM = {}
+    MAX_EPISODE_STEPS = 100
 
 
 ##############################################################################
@@ -74,6 +75,7 @@ class FrankaEnv(gym.Env):
         self.action_scale = config.ACTION_SCALE
         self._TARGET_POSE = config.TARGET_POSE
         self._REWARD_THRESHOLD = config.REWARD_THRESHOLD
+        self._max_steps = config.MAX_EPISODE_STEPS
         self.url = config.SERVER_URL
         self.config = config
 
@@ -246,7 +248,7 @@ class FrankaEnv(gym.Env):
         reward = self.compute_reward(ob)
         if reward:
             print("Goal reached!")
-        done = self.curr_path_length >= 100 or reward
+        done = self.curr_path_length >= self._max_steps or reward
         return ob, int(reward), done, False, {}
 
     def compute_reward(self, obs):

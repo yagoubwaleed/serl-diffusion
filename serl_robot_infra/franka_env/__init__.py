@@ -9,8 +9,8 @@ register(
 
 register(
     id="FrankaPickNPlace-Vision-v0",
-    entry_point="franka_env.envs:picknplace_env:FrankaPickNPlace",
-    max_episode_steps=200,
+    entry_point="franka_env.envs.picknplace_env:FrankaPickNPlace",
+    max_episode_steps=800,
 )
 
 register(

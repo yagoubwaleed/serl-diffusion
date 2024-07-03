@@ -5,6 +5,7 @@ from franka_env.envs.franka_env import DefaultEnvConfig
 class PickNPlaceConfig(DefaultEnvConfig):
     """Set the configuration for FrankaEnv."""
     SERVER_URL: str = "http://127.0.0.1:5000/"
+    MAX_EPISODE_STEPS = 200
     REALSENSE_CAMERAS = {
         "wrist_1": "123622270810",
         "wrist_2": "130322270807",
@@ -21,7 +22,7 @@ class PickNPlaceConfig(DefaultEnvConfig):
         ]
     )
     REWARD_THRESHOLD = None
-    ACTION_SCALE = np.array([0.1, 0.3, 1])
+    ACTION_SCALE = np.array([.5, 0.5, 1])
     RANDOM_RESET = False
     RANDOM_XY_RANGE = 0.05
     RANDOM_RZ_RANGE = np.pi / 4
@@ -56,10 +57,10 @@ class PickNPlaceConfig(DefaultEnvConfig):
         "translational_Ki": 0,
         "translational_clip_x": 0.003,
         "translational_clip_y": 0.003,
-        "translational_clip_z": 0.005,
+        "translational_clip_z": 0.003,
         "translational_clip_neg_x": 0.003,
         "translational_clip_neg_y": 0.003,
-        "translational_clip_neg_z": 0.005,
+        "translational_clip_neg_z": 0.003,
         "rotational_clip_x": 0.02,
         "rotational_clip_y": 0.02,
         "rotational_clip_z": 0.02,
