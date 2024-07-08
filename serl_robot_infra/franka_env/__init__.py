@@ -15,7 +15,7 @@ register(
 
 register(
     id="FrankaPushing-Vision-v0",
-    entry_point="franka_env.envs:pushing_env:FrankaPushing",
+    entry_point="franka_env.envs.pushing_env:FrankaPushing",
     max_episode_steps=100,
 )
 register(
