@@ -10,13 +10,11 @@ class PushingEnvConfig(DefaultEnvConfig):
         "wrist_1": "123622270810",
         "wrist_2": "130322270807",
     }
-    TARGET_POSE = np.array(
-        [0.5274304758420084,
-         0.0886595901532952,
-         0.07811173626351817,
-         3.1149106,
-         0.0602937,
-         0.1077098])
+    TARGET_POSE = np.array([
+        0.42665713589860976,
+        0.01697357310341893,
+        0.030485965848999902,
+        3.1130148, 0.0956483, -0.0854985])
     RESET_POSE = TARGET_POSE + np.array([-0.3, 0.0, 0.1, 0.0, 0.0, 0.0])
     REWARD_THRESHOLD: np.ndarray = np.array([0.02, 0.02, 0.02, 0.2, 0.2, 0.2])
     ACTION_SCALE = np.array([0.3, 0.3, 0.8])
