@@ -1,7 +1,9 @@
 import time
+from dataclasses import asdict
 
 import hydra
 import numpy as np
+import omegaconf.dictconfig
 import torch
 import wandb
 import torch.nn as nn
@@ -22,6 +24,7 @@ def main(cfg: DiffusionModelRunConfig):
 def run_training(cfg: DiffusionModelRunConfig):
     wandb.init(
         name="Serl Diffusion",
+        config=dict(cfg) if isinstance(cfg, omegaconf.dictconfig.DictConfig) else asdict(cfg),
     )
     nets, ema, noise_scheduler, optimizer, lr_scheduler, dataloader, stats, device = instantiate_model_artifacts(cfg,
                                                                                                                  model_only=False)

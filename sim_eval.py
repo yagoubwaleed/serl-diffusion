@@ -70,7 +70,6 @@ def process_obs(obs, nets, device, image_keys, state_keys):
     state = [obs[state_key] for state_key in state_keys]
     # state.insert(3, np.sinh(obs['robot0_joint_pos_sin']))
     state = np.concatenate(state, axis=-1)
-    imgs = [np.array(obs[key]) for key in image_keys]
 
     with torch.no_grad():
         images = []

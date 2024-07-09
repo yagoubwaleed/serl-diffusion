@@ -94,9 +94,8 @@ def main(cfg: EvalConfig):
     stats = checkpoint['stats']
 
     env = gym.make(
-        "FrankaPegInsert-Vision-v0",
+        "FrankaPushing-Vision-v0",
         fake_env=False,
-
     )
     env = GripperCloseEnv(env)
     env = Quat2EulerWrapper(env)
