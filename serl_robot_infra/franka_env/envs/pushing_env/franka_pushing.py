@@ -6,12 +6,12 @@ import copy
 
 from franka_env.envs.franka_env import FrankaEnv
 from franka_env.utils.rotations import euler_2_quat
-from franka_env.envs.peg_env.config import PegEnvConfig
+from franka_env.envs.pushing_env.config import PushingEnvConfig
 
 
 class FrankaPushing(FrankaEnv):
     def __init__(self, **kwargs):
-        super().__init__(**kwargs, config=PegEnvConfig)
+        super().__init__(**kwargs, config=PushingEnvConfig)
 
     def go_to_rest(self, joint_reset=False):
         self.update_currpos()
