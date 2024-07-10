@@ -5,10 +5,10 @@ from franka_env.envs.franka_env import DefaultEnvConfig
 class PickNPlaceConfig(DefaultEnvConfig):
     """Set the configuration for FrankaEnv."""
     SERVER_URL: str = "http://127.0.0.1:5000/"
-    MAX_EPISODE_STEPS = 200
     REALSENSE_CAMERAS = {
         "wrist_1": "123622270810",
         "wrist_2": "130322270807",
+        "agent_view_1": "213522250963"
     }
     TARGET_POSE = None
     RESET_POSE = np.array(
@@ -24,28 +24,26 @@ class PickNPlaceConfig(DefaultEnvConfig):
     REWARD_THRESHOLD = None
     ACTION_SCALE = np.array([.5, 0.5, 1])
     RANDOM_RESET = False
-    RANDOM_XY_RANGE = 0.05
-    RANDOM_RZ_RANGE = np.pi / 4
-
+    RANDOM_XY_RANGE = 0.1
+    RANDOM_RZ_RANGE = np.pi / 6
     ABS_POSE_LIMIT_LOW = np.array(
         [
-            0.2472017308341049,
-            0.19075104894248351,
-            0.021,
-            RESET_POSE[3] - 0.1,
-            RESET_POSE[4] - 0.1,
-            RESET_POSE[5] - RANDOM_RZ_RANGE,
+            RESET_POSE[0] - 1,
+            RESET_POSE[1] - 1,
+            RESET_POSE[2] - 0.1,
+            RESET_POSE[3] - np.pi / 2,
+            RESET_POSE[4] - np.pi / 2,
+            RESET_POSE[5] - np.pi / 2,
         ]
     )
-
     ABS_POSE_LIMIT_HIGH = np.array(
         [
-            0.5792640702964066,
-            0.6341936890734797,
-            0.1410515521524619,
-            RESET_POSE[3] + 0.1,
-            RESET_POSE[4] + 0.1,
-            RESET_POSE[5] + RANDOM_RZ_RANGE,
+            RESET_POSE[0] + 1,
+            RESET_POSE[1] + 1,
+            RESET_POSE[2] + 1,
+            RESET_POSE[3] + np.pi / 2,
+            RESET_POSE[4] + np.pi / 2,
+            RESET_POSE[5] + np.pi / 2,
         ]
     )
 
@@ -55,21 +53,20 @@ class PickNPlaceConfig(DefaultEnvConfig):
         "rotational_stiffness": 150,
         "rotational_damping": 7,
         "translational_Ki": 0,
-        "translational_clip_x": 0.003,
-        "translational_clip_y": 0.003,
-        "translational_clip_z": 0.003,
-        "translational_clip_neg_x": 0.003,
-        "translational_clip_neg_y": 0.003,
-        "translational_clip_neg_z": 0.003,
-        "rotational_clip_x": 0.02,
-        "rotational_clip_y": 0.02,
-        "rotational_clip_z": 0.02,
-        "rotational_clip_neg_x": 0.02,
-        "rotational_clip_neg_y": 0.02,
-        "rotational_clip_neg_z": 0.02,
+        "translational_clip_x": 0.008,
+        "translational_clip_y": 0.008,
+        "translational_clip_z": 0.005,
+        "translational_clip_neg_x": 0.008,
+        "translational_clip_neg_y": 0.008,
+        "translational_clip_neg_z": 0.005,
+        "rotational_clip_x": 0.07,
+        "rotational_clip_y": 0.07,
+        "rotational_clip_z": 0.03,
+        "rotational_clip_neg_x": 0.07,
+        "rotational_clip_neg_y": 0.07,
+        "rotational_clip_neg_z": 0.03,
         "rotational_Ki": 0,
     }
-
     PRECISION_PARAM = {
         "translational_stiffness": 3000,
         "translational_damping": 89,
@@ -90,3 +87,4 @@ class PickNPlaceConfig(DefaultEnvConfig):
         "rotational_clip_neg_z": 0.05,
         "rotational_Ki": 0.1,
     }
+    MAX_EPISODE_STEPS = 1000
