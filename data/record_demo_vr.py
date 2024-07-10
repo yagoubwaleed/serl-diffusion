@@ -32,6 +32,8 @@ def _flatten_obs(obs, env):
 
 def main(arg):
     env = gym.make("FrankaPickNPlace-Vision-v0")
+    # env = gym.make("FrankaPegInsert-Vision-v0")
+    # env = gym.make("FrankaPickNPlace-Vision-v0")
     if not arg.gripper:
         env = GripperCloseEnv(env)
     # env = RelativeFrame(env)
@@ -43,7 +45,7 @@ def main(arg):
     transitions = []
     success_count = 0
     # Change this to the number of demos you want to record
-    success_needed = 10
+    success_needed = 15
     pbar = tqdm(total=success_needed)
     controller = VRController()
     current_trajectory = []
@@ -75,6 +77,11 @@ def main(arg):
             if controller.save_demo():
                 success_count += 1
                 pbar.update(1)
+
+                # set the reward to 1 and the dones to 1
+                current_trajectory[-1]["dones"] = True
+                current_trajectory[-1]["rewards"] = 1
+
                 transitions.extend(current_trajectory)
                 print(f"Saving trajectory of length {len(current_trajectory)}")
             current_trajectory = []
