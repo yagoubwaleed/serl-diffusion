@@ -8,13 +8,13 @@ class PickNPlaceConfig(DefaultEnvConfig):
     REALSENSE_CAMERAS = {
         "wrist_1": "123622270810",
         "wrist_2": "130322270807",
-        "agent_view_1": "213522250963"
+        # "agent_view_1": "213522250963"
     }
     TARGET_POSE = None
     RESET_POSE = np.array(
         [
-            0.2945907180366626,
-            0.434584304953815,
+            0.37,
+            0.01,
             0.13751238794480508,
             3.157248,
             -0.09709,

@@ -144,9 +144,9 @@ class FrankaEnv(gym.Env):
                         "wrist_2": gym.spaces.Box(
                             0, 255, shape=(128, 128, 3), dtype=np.uint8
                         ),
-                        "agent_view_1": gym.spaces.Box(
-                            0, 255, shape=(128, 128, 3), dtype=np.uint8
-                        ),
+                        # "agent_view_1": gym.spaces.Box(
+                        #     0, 255, shape=(128, 128, 3), dtype=np.uint8
+                        # ),
                     }
                 ),
             }
@@ -273,9 +273,9 @@ class FrankaEnv(gym.Env):
             return image[:, 80:560, :]
         elif name == "wrist_2":
             return image[:, 80:560, :]
-        elif name == "agent_view_1":
-            # The image is a 1280 × 800 image, crop to 800x800
-            return image[:, 240:1040, :]
+        # elif name == "agent_view_1":
+        #     # The image is a 1280 × 800 image, crop to 800x800
+        #     return image[:, 240:1040, :]
         else:
             return ValueError(f"Camera {name} not recognized in cropping")
 
