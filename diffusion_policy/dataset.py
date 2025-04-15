@@ -280,7 +280,7 @@ class HD5PYDataset(BaseDataset):
         self.action_horizon = action_horizon
         self.obs_horizon = obs_horizon
 
-
+########## modified to flatten hil serl dictionary (dastaset ccompatibility) ##########
 class SERLImageDataset(BaseDataset):
     def __init__(self,
                  dataset_path: str,
@@ -301,14 +301,19 @@ class SERLImageDataset(BaseDataset):
         episode_ends = []
 
         for i in range(len(data)):
+            # ERROR CODE: state = [np.array(data[i]["observations"]["state"][:, state_key]) for state_key in state_keys]
+            # breakpoint()
             state = [np.array(data[i]["observations"][state_key]) for state_key in state_keys]
-            state = np.concatenate(state, axis=-1)
+            state = np.concatenate(state, axis=-1).flatten()
             states.append(state)
             imgs = []
             for key in image_keys:
                 img = data[i]['observations'][key]
+                if img.ndim == 4:
+                    img = img[0]
                 img = np.moveaxis(img, -1, 0)
                 imgs.append(img)
+            # breakpoint()
             image = np.stack(imgs, axis=0)
             images.append(image)
             actions.append(data[i]['actions'])
@@ -357,11 +362,11 @@ class SERLImageDataset(BaseDataset):
 
 
 if __name__ == "__main__":
-    dataset_path = '../data/replay_data.pkl'
+    dataset_path = '/home/robot/projects/waleed-test/jax-hitl-hil-serl/examples/experiments/cube_reach3/demos/cube_reach3_200_success_images_2025-04-11_16-01-07.pkl'
     print('here')
     try:
         cfg = DatasetConfig()
-        dataset1 = JacobPickleDataset(
+        dataset1 = SERLImageDataset(
             dataset_path=dataset_path,
             pred_horizon=16,
             obs_horizon=2,
@@ -374,3 +379,4 @@ if __name__ == "__main__":
         print(e)
     print('here')
     print(len(dataset1))
+    # breakpoint()
